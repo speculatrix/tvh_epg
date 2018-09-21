@@ -20,14 +20,18 @@ That said, I'd be grateful for any help I can get!
 
 ### TBD
 
-* add a function to get the channel list
-* add a function to get the EPG data for a specific channel
+* analyse the EPG data for a specific channel
 * create a proper now/next view timeline
 * start to use /var/lib/tvh_epg for settings and caches etc
 * implement user definable settings
 * save a cache of channel information
 
+
 ### Done - in reverse order
+
+20180921
+* add a function to get the channel list
+* experiment with a function to get the EPG data for a specific channel
 
 20180920:
 * create a github repo and push some stuff in there
