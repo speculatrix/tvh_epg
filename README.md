@@ -30,6 +30,7 @@ That said, I'd be grateful for any help I can get!
 ### Done - in reverse order
 
 20180921
+* make channel name be link to the live stream
 * add a function to get the channel list
 * experiment with a function to get the EPG data for a specific channel
 
