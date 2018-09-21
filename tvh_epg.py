@@ -23,10 +23,10 @@ from	tvh_epg_config	import DOCROOT_DEFAULT
 ################################################################################
 
 
-TS_URL_SI = TS_URL + 'serverinfo'
-TS_URL_EPG = TS_URL + 'epg/events/grid'
-TS_URL_CHN = TS_URL + 'channel/grid'
-
+TS_URL_SVI = TS_URL + 'api/serverinfo'
+TS_URL_EPG = TS_URL + 'api/epg/events/grid'
+TS_URL_CHN = TS_URL + 'api/channel/grid'
+TS_URL_STR = TS_URL + 'stream/channel'
 
 CGI_PARAMS = cgi.FieldStorage()
 
@@ -127,7 +127,7 @@ def page_channels():
     channel_dict = get_channel_dict()
     #print('<pre>%s</pre>' % json.dumps(channel_dict, sort_keys=True, indent=4, separators=(',', ': ')) )
     cdl = len(channel_dict)
-    print('<p><b>Channel count: %d</b></p>' % (cdl, ))
+    print('<p><b>Channel count: %d</b></p><p>Note, the links are the streams, open in VLC - you can drag and drop the link into a VLC window</p>' % (cdl, ))
 
     if cdl:
         print('''  <table>
@@ -137,11 +137,13 @@ def page_channels():
       <th>Channel UUID</th>
     </tr>
 ''')
-        for chan in channel_dict:
+        for ch_name in channel_dict:
+            chan = channel_dict[ch_name]
+            play_url = '%s/%s' % (TS_URL_STR, chan['uuid'], )
             print('    <tr>')
-            print('      <td>%s</td>' % (chan, ))
-            print('      <td>%s</td>' % (channel_dict[chan]['number'], ))
-            print('      <td>%s</td>' % (channel_dict[chan]['uuid'], ))
+            print('      <td><a href="%s">%s</a></td>' % (play_url, ch_name, ))
+            print('      <td>%s</td>' % (chan['number'], ))
+            print('      <td>%s</td>' % (chan['uuid'], ))
             print('    </tr>')
 
         print('</table>')
@@ -153,7 +155,9 @@ def page_epg():
     print('<h1>EPG</h1>')
 
     channel_dict = get_channel_dict()
-    if len(channel_dict):
+    cdl = len(channel_dict)
+    if cdl:
+        print('<p><b>Channel count: %d</b></p><p>Note, the links are the streams, open in VLC - you can drag and drop the link into a VLC window</p>' % (cdl, ))
 
         # get the EPG data for each channel
         print('''  <table>
@@ -167,18 +171,18 @@ def page_epg():
     </tr>
 ''')
         for ch_name in channel_dict:
-            print('<tr><td>%s</td>' % (ch_name, ))
             chan = channel_dict[ch_name]
+            play_url = '%s/%s' % (TS_URL_STR, chan['uuid'], )
+            print('    <tr><td><a href="%s">%s</a></td>' % (play_url, ch_name, ))
             chan['epg'] = []
             req_url = '%s?limit=5&channel=%s' % (TS_URL_EPG, chan['uuid'], )
-            #print('channel %s => %s<br />' % (ch_name, req_url, )) #str(chan, )) )
             tvh_response = requests.get(req_url, auth=(TS_USER, TS_PASS))
             tvh_json = tvh_response.json()
             if len(tvh_json['entries']):
                 try:
                     for entry in tvh_json['entries']:
                         if 'title' in entry:
-                            print('<td>%s<br />start %s<br />stop %s</td>' % (entry['title'], epoch_to_localtime(entry['start']), epoch_to_localtime(entry['stop']), ) )
+                            print('<td valign="top" nowrap><b>%s</b><br />start %s<br />stop %s</td>' % (entry['title'], epoch_to_localtime(entry['start']), epoch_to_localtime(entry['stop']), ) )
                         else:
                             print('<td>&nbsp;</td>')
                     #chan['epg'].append(tvh_json['entries'])
@@ -260,7 +264,7 @@ def page_serverinfo():
 
     print('<h1>server info</h1>')
 
-    tvh_response = requests.get(TS_URL_SI, auth=(TS_USER, TS_PASS))
+    tvh_response = requests.get(TS_URL_SVI, auth=(TS_USER, TS_PASS))
     tvh_json = tvh_response.json()
 
     print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, indent=4, separators=(',', ': ')) )
