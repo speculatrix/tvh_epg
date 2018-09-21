@@ -56,6 +56,7 @@ def secs_to_human(t_secs):
 
 ################################################################################
 def epoch_to_localtime(epoch_time):
+    '''takes numeric sec since unix epoch and returns humanly readable time'''
 
     return time.asctime(time.localtime(epoch_time))
 
@@ -173,7 +174,7 @@ def page_epg():
         for ch_name in channel_dict:
             chan = channel_dict[ch_name]
             play_url = '%s/%s' % (TS_URL_STR, chan['uuid'], )
-            print('    <tr><td><a href="%s">%s</a></td>' % (play_url, ch_name, ))
+            print('    <tr>\n      <td><a href="%s">%s</a></td>' % (play_url, ch_name, ))
             chan['epg'] = []
             req_url = '%s?limit=5&channel=%s' % (TS_URL_EPG, chan['uuid'], )
             tvh_response = requests.get(req_url, auth=(TS_USER, TS_PASS))
@@ -182,17 +183,17 @@ def page_epg():
                 try:
                     for entry in tvh_json['entries']:
                         if 'title' in entry:
-                            print('<td valign="top" nowrap><b>%s</b><br />start %s<br />stop %s</td>' % (entry['title'], epoch_to_localtime(entry['start']), epoch_to_localtime(entry['stop']), ) )
+                            print('      <td valign="top" nowrap><b>%s</b><br />start %s<br />stop %s</td>' % (entry['title'], epoch_to_localtime(entry['start']), epoch_to_localtime(entry['stop']), ) )
                         else:
-                            print('<td>&nbsp;</td>')
+                            print('      <td>&nbsp;</td>')
                     #chan['epg'].append(tvh_json['entries'])
                     #print(', '.join(tvh_json['entries'] ))
                     #print(tvh_json['entries'][0]['title'])
                 except Exception as e:
-                    print('<td>' + str(e) + '</td>')
+                    print('      <td>' + str(e) + '</td>')
             else:
-                print('<td colspan="5">&nbsp</td>')
-            print('</tr>')
+                print('      <td colspan="5">&nbsp</td>')
+            print('    </tr>')
         print('</table>')
 
     return
