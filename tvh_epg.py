@@ -178,7 +178,7 @@ def page_epg():
                 try:
                     for entry in tvh_json['entries']:
                         if 'title' in entry:
-                            print('<td>%s - start %s stop %s</td>' % (entry['title'], epoch_to_localtime(entry['start']), epoch_to_localtime(entry['stop']), ) )
+                            print('<td>%s<br />start %s<br />stop %s</td>' % (entry['title'], epoch_to_localtime(entry['start']), epoch_to_localtime(entry['stop']), ) )
                         else:
                             print('<td>&nbsp;</td>')
                     #chan['epg'].append(tvh_json['entries'])
