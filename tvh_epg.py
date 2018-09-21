@@ -307,11 +307,11 @@ table td, table th {
 <body>
 ''')
 
-    print('<a href="/python_errors/?C=M;O=A" target="_new">/python_errors (new window)</a><br />')
+    print('<a href="/python_errors/?C=M;O=A" target="_new">/python_errors (new window)</a><br /><br />')
 
 
     print('''
-<a href="?page=epg">EPG</a>&nbsp;&nbsp;&nbsp;
+<b>Menu:</b>&nbsp;<a href="?page=epg">EPG</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=channels">Channels</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=serverinfo">Server Info</a>&nbsp;&nbsp;&nbsp;
 ''')
