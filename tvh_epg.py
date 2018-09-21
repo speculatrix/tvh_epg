@@ -55,6 +55,11 @@ def secs_to_human(t_secs):
     return h_time
 
 ################################################################################
+def epoch_to_localtime(epoch_time):
+
+    return time.asctime(time.localtime(epoch_time))
+
+################################################################################
 def save_channel_dict_to_cache():
     '''saves channel dict to cache file - FIXME'''
 
@@ -121,25 +126,22 @@ def page_channels():
 
     channel_dict = get_channel_dict()
     #print('<pre>%s</pre>' % json.dumps(channel_dict, sort_keys=True, indent=4, separators=(',', ': ')) )
+    cdl = len(channel_dict)
+    print('<p><b>Channel count: %d</b></p>' % (cdl, ))
 
-#    tvh_response = requests.get('%s?limit=400' % (TS_URL_CHN, ), auth=(TS_USER, TS_PASS))
-#    tvh_json = tvh_response.json()
-
-#    if 'total' in tvh_json:
-#        print('<p><b>Channel count: %s</b></p>' % (tvh_json['total'], ))
-
-
-    if len(channel_dict):
+    if cdl:
         print('''  <table>
     <tr>
       <th>Channel Name</th>
-      <th>Channel Number<th>
+      <th>Channel Number</th>
+      <th>Channel UUID</th>
     </tr>
 ''')
         for chan in channel_dict:
             print('    <tr>')
             print('      <td>%s</td>' % (chan, ))
             print('      <td>%s</td>' % (channel_dict[chan]['number'], ))
+            print('      <td>%s</td>' % (channel_dict[chan]['uuid'], ))
             print('    </tr>')
 
         print('</table>')
@@ -148,13 +150,51 @@ def page_channels():
 def page_epg():
     '''prints the EPG to stdout'''
 
-    print('<h1>epg</h1>')
+    print('<h1>EPG</h1>')
 
-    tvh_response = requests.get('%s?limit=400' % (TS_URL_EPG, ), auth=(TS_USER, TS_PASS))
-    tvh_json = tvh_response.json()
+    channel_dict = get_channel_dict()
+    if len(channel_dict):
 
-    print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, indent=4, separators=(',', ': ')) )
+        # get the EPG data for each channel
+        print('''  <table>
+    <tr>
+      <th>Channel Name</th>
+      <th>Now</th>
+      <th>Next</th>
+      <th>Next</th>
+      <th>Next</th>
+      <th>Next</th>
+    </tr>
+''')
+        for ch_name in channel_dict:
+            print('<tr><td>%s</td>' % (ch_name, ))
+            chan = channel_dict[ch_name]
+            chan['epg'] = []
+            req_url = '%s?limit=5&channel=%s' % (TS_URL_EPG, chan['uuid'], )
+            #print('channel %s => %s<br />' % (ch_name, req_url, )) #str(chan, )) )
+            tvh_response = requests.get(req_url, auth=(TS_USER, TS_PASS))
+            tvh_json = tvh_response.json()
+            if len(tvh_json['entries']):
+                try:
+                    for entry in tvh_json['entries']:
+                        if 'title' in entry:
+                            print('<td>%s - start %s stop %s</td>' % (entry['title'], epoch_to_localtime(entry['start']), epoch_to_localtime(entry['stop']), ) )
+                        else:
+                            print('<td>&nbsp;</td>')
+                    #chan['epg'].append(tvh_json['entries'])
+                    #print(', '.join(tvh_json['entries'] ))
+                    #print(tvh_json['entries'][0]['title'])
+                except Exception as e:
+                    print('<td>' + str(e) + '</td>')
+            else:
+                print('<td colspan="5">&nbsp</td>')
+            print('</tr>')
+        print('</table>')
 
+    return
+
+    ###########################################################################
+    #### below is stuff am thinking about
     if 'totalCount' in tvh_json:
         print('<p>Entries: %d</p>' % tvh_json['totalCount'] )
 
@@ -207,9 +247,9 @@ def page_epg():
             print('        <td>%d</td>' % (channel_map[key]['channelNumber'], ))
             print('        <td>%s</td>' % (channel_map[key]['channelName'], ))
             #print('        <td>%s</td>' % (channel_map[key]['title'], ))
-            print('        <td>%s</td>' % (time.asctime(time.localtime(time_start), )))
-            print('        <td>%s</td>' % (time.asctime(time.localtime(time_stop), )))
-            print('        <td>%s</td>' % (secs_to_human(duration), ))
+            print('        <td>%s</td>' % (time.asctime(time.localtime(time_start)), ))
+            print('        <td>%s</td>' % (time.asctime(time.localtime(time_stop)), ))
+            print('        <td>%s</td>' % (secs_to_human(duration)), )
             print('    </tr>')
         print('</table>')
 

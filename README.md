@@ -9,8 +9,9 @@ That said, I'd be grateful for any help I can get!
 
 ## installation
 
-put the tvh_epg.py into /usr/lib/cgi-bin
-put the config file into /usr/lib/cgi-bin/tvh_epg_config/ and edit it with your server details
+* put the tvh_epg.py into /usr/lib/cgi-bin
+* put the config file into /usr/lib/cgi-bin/tvh_epg_config/
+* edit the config with your server details
 
 
 ## roadmap
