@@ -7,28 +7,34 @@ import  cgi
 import  cgitb
 import  json
 import  os
-import  requests
 import  sys
 import  time
+
+import  collections
+import  requests
 
 from	tvh_epg_config	import TS_USER
 from	tvh_epg_config	import TS_PASS
 from	tvh_epg_config	import TS_URL
 from	tvh_epg_config	import DOCROOT_DEFAULT
 
-#####################################################################################################################
+# pylint:disable=bad-whitespace
+
+################################################################################
 
 
 TS_URL_SI = TS_URL + 'serverinfo'
 TS_URL_EPG = TS_URL + 'epg/events/grid'
+TS_URL_CHN = TS_URL + 'channel/grid'
 
 
 CGI_PARAMS = cgi.FieldStorage()
 
 
-#####################################################################################################################
+################################################################################
 def secs_to_human(t_secs):
-    
+    '''turns a duration in seconds into Xd HH:MM:SS'''
+
     #t_secs = 86400 + 4000 + 120 + 5
 
     t_mins = int(t_secs / 60)
@@ -46,80 +52,161 @@ def secs_to_human(t_secs):
 
     h_time = '%s%02d:%02d:%02d' % (h_days, r_hours, r_mins, r_secs, )
 
-    return(h_time)
+    return h_time
 
-#####################################################################################################################
+################################################################################
+def save_channel_dict_to_cache():
+    '''saves channel dict to cache file - FIXME'''
+
+################################################################################
+def load_channel_dict_from_cache():
+    '''load channel dict from cache file - FIXME'''
+
+
+################################################################################
+def get_channel_dict():
+    '''gets the channel listing and generats an ordered dict by name'''
+
+    tvh_response = requests.get('%s?limit=400' % (TS_URL_CHN, ), auth=(TS_USER, TS_PASS))
+    tvh_json = tvh_response.json()
+    #print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, indent=4, separators=(',', ': ')) )
+
+    channel_map = {}    # full channel info
+    channel_list = []   # build a list of channel names
+    ordered_channel_map = collections.OrderedDict()
+    if 'entries' in tvh_json:
+
+        # grab all channel info
+        name_unknown = 0
+        number_unknown = -1
+        for entry in tvh_json['entries']:
+            # start building a dict with channel name as key
+            if 'name' in entry:
+                channel_name = entry['name']
+            else:
+                channel_name = 'unknown ' + str(name_unknown)
+                name_unknown += 1
+
+            channel_list.append(channel_name)
+            if channel_name not in channel_map:
+                channel_map[channel_name] = {}
+
+            # store the channel specific info
+            ch_map = channel_map[channel_name]
+
+            if 'number' in entry:
+                ch_map['number'] = entry['number']
+            else:
+                ch_map['number'] = number_unknown
+                name_unknown -= 1
+
+            ch_map['uuid'] = entry['uuid']
+
+        channel_list_sorted = sorted(channel_list, key=lambda s: s.casefold())
+
+        # case insensitive sort of channel list
+        for chan in channel_list_sorted:
+            # ... produces an ordered dict
+            #print('adding %s<br />' % (chan, ))
+            ordered_channel_map[chan] = channel_map[chan]
+
+    return ordered_channel_map
+
+
+################################################################################
+def page_channels():
+    '''prints the channel list to stdout'''
+
+    print('<h1>Channels</h1>')
+
+    channel_dict = get_channel_dict()
+    #print('<pre>%s</pre>' % json.dumps(channel_dict, sort_keys=True, indent=4, separators=(',', ': ')) )
+
+#    tvh_response = requests.get('%s?limit=400' % (TS_URL_CHN, ), auth=(TS_USER, TS_PASS))
+#    tvh_json = tvh_response.json()
+
+#    if 'total' in tvh_json:
+#        print('<p><b>Channel count: %s</b></p>' % (tvh_json['total'], ))
+
+
+    if len(channel_dict):
+        print('''  <table>
+    <tr>
+      <th>Channel Name</th>
+      <th>Channel Number<th>
+    </tr>
+''')
+        for chan in channel_dict:
+            print('    <tr>')
+            print('      <td>%s</td>' % (chan, ))
+            print('      <td>%s</td>' % (channel_dict[chan]['number'], ))
+            print('    </tr>')
+
+        print('</table>')
+
+################################################################################
 def page_epg():
+    '''prints the EPG to stdout'''
 
     print('<h1>epg</h1>')
 
     tvh_response = requests.get('%s?limit=400' % (TS_URL_EPG, ), auth=(TS_USER, TS_PASS))
     tvh_json = tvh_response.json()
 
-    if 'totalCount' in tvh_json:
-        print('<p>Entries: %d</p>' % tvh_json['totalCount'] )
-
-    if 'entries' in tvh_json:
-        channel_map = {}
-        for entry in tvh_json['entries']:
-            #print('<p>adding chr %s and chn %s</p>' % (entry['channelNumber'], entry['channelName'], ) )
-            channel_number = int(entry['channelNumber'])
-            if not channel_number in channel_map:
-                channel_map[channel_number] = {}
-
-            channel_map[channel_number]['channelName'] = entry['channelName']
-            channel_map[channel_number]['title'] = entry['title']
-            channel_map[channel_number]['start'] = entry['start']
-            channel_map[channel_number]['stop'] = entry['stop']
-
-        print('  <table>\n    <tr><th>Number</th><th>Name</th><th>Now</th><th>Start</th><th>Stop</th><th>Duration</th></tr>')
-        for key in sorted(channel_map):
-            time_start = int(channel_map[key]['start'])
-            time_stop = int(channel_map[key]['stop'])
-            duration = time_stop - time_start
-            print('    <tr>')
-            print('        <td>%d</td><td>%s</td>' % (key, channel_map[key]['channelName'], ))
-            print('        <td>%s</td>' % (channel_map[key]['title'], ))
-            print('        <td>%s</td>' % (time.asctime(time.localtime(time_start), )))
-            print('        <td>%s</td>' % (time.asctime(time.localtime(time_stop), )))
-            print('        <td>%s</td>' % (secs_to_human(duration), ))
-            print('    </tr>')
-        print('</table>')
-
     print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, indent=4, separators=(',', ': ')) )
 
-
-#####################################################################################################################
-def page_now():
-
-    print('<h1>Whats On Now</h1>')
-
-    tvh_response = requests.get('%s?limit=400' % (TS_URL_EPG, ), auth=(TS_USER, TS_PASS))
-    tvh_json = tvh_response.json()
-
     if 'totalCount' in tvh_json:
         print('<p>Entries: %d</p>' % tvh_json['totalCount'] )
 
     if 'entries' in tvh_json:
         channel_map = {}
         for entry in tvh_json['entries']:
-            channel_number = int(entry['channelNumber'])
-            if not channel_number in channel_map:
-                channel_map[channel_number] = {}
+            channel_uuid = entry['channelUuid']
+            if channel_uuid not in channel_map:
+                channel_map[channel_uuid] = {}
 
-            channel_map[channel_number]['channelName'] = entry['channelName']
-            channel_map[channel_number]['title'] = entry['title']
-            channel_map[channel_number]['start'] = entry['start']
-            channel_map[channel_number]['stop'] = entry['stop']
+            if 'channelNumber' in entry:
+                channel_map[channel_uuid]['channelNumber'] = int(entry['channelNumber'])
+            else:
+                channel_map[channel_uuid]['channelNumber'] = -1
 
-        print('  <table>\n    <tr><th>Number</th><th>Name</th><th>Now</th><th>Start</th><th>Stop</th><th>Duration</th></tr>')
+            if 'channelName' in entry:
+                channel_map[channel_uuid]['channelName'] = entry['channelName']
+            else:
+                channel_map[channel_uuid]['channelName'] = ''
+
+            if 'title' in entry:
+                channel_map[channel_uuid]['title'] = entry['title']
+            else:
+                channel_map[channel_uuid]['title'] = ''
+
+            if 'start' in entry:
+                channel_map[channel_uuid]['start'] = entry['start']
+            else:
+                channel_map[channel_uuid]['start'] = 0
+
+            if 'stop' in entry:
+                channel_map[channel_uuid]['stop'] = entry['stop']
+            else:
+                channel_map[channel_uuid]['stop'] = 0
+
+        print('''  <table>
+    <tr>
+      <th>Number</th>
+      <th>Name</th>
+      <th>Now</th>
+      <th>Start</th>
+      <th>Stop</th>
+      <th>Duration</th>
+    </tr>''')
         for key in sorted(channel_map):
             time_start = int(channel_map[key]['start'])
             time_stop = int(channel_map[key]['stop'])
             duration = time_stop - time_start
             print('    <tr>')
-            print('        <td>%d</td><td>%s</td>' % (key, channel_map[key]['channelName'], ))
-            print('        <td>%s</td>' % (channel_map[key]['title'], ))
+            print('        <td>%d</td>' % (channel_map[key]['channelNumber'], ))
+            print('        <td>%s</td>' % (channel_map[key]['channelName'], ))
+            #print('        <td>%s</td>' % (channel_map[key]['title'], ))
             print('        <td>%s</td>' % (time.asctime(time.localtime(time_start), )))
             print('        <td>%s</td>' % (time.asctime(time.localtime(time_stop), )))
             print('        <td>%s</td>' % (secs_to_human(duration), ))
@@ -127,8 +214,9 @@ def page_now():
         print('</table>')
 
 
-#####################################################################################################################
+################################################################################
 def page_serverinfo():
+    '''prints the server information, useful to check the API call is working at all'''
 
     print('<h1>server info</h1>')
 
@@ -138,7 +226,7 @@ def page_serverinfo():
     print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, indent=4, separators=(',', ': ')) )
 
 
-#####################################################################################################################
+################################################################################
 def web_interface():
     '''this is the function which produces the web interface, as opposed
     to the cron function'''
@@ -179,12 +267,12 @@ table td, table th {
 <body>
 ''')
 
-    print('Python errors at <a href="/python_errors/?C=M;O=A" target="_new">/python_errors (new window)</a><br />')
+    print('<a href="/python_errors/?C=M;O=A" target="_new">/python_errors (new window)</a><br />')
 
 
     print('''
 <a href="?page=epg">EPG</a>&nbsp;&nbsp;&nbsp;
-<a href="?page=now">Now</a>&nbsp;&nbsp;&nbsp;
+<a href="?page=channels">Channels</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=serverinfo">Server Info</a>&nbsp;&nbsp;&nbsp;
 ''')
 
@@ -192,19 +280,21 @@ table td, table th {
     if 'page' in CGI_PARAMS:
         p_page = CGI_PARAMS.getvalue('page')
 
-        if (p_page == 'serverinfo'):
+        if p_page == 'serverinfo':
             page_serverinfo()
-        elif (p_page == 'epg'):
+        elif p_page == 'epg':
             page_epg()
-        elif (p_page == 'now'):
-            page_now()
+        elif p_page == 'channels':
+            page_channels()
+        else:
+            illegal_param_count += 1
 
 
     print('''</body>
 </html>''')
 
 
-#####################################################################################################################
+################################################################################
 # main
 
 if len(sys.argv) <= 1:
