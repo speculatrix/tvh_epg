@@ -1,7 +1,9 @@
 # tvh_epg
 
-This is just the very start of this project, at the moment it's not even a
-proof of concept. There's no point in you playing with it unless you just
+This is just the very start of this project, at the moment it's just a
+proof of concept, a simple python3 program which grabs channel and EPG
+data from a TVHeadEnd server
+ There's no point in you playing with it unless you just
 want to see some python being hacked out.
 
 That said, I'd be grateful for any help I can get!
@@ -33,3 +35,11 @@ That said, I'd be grateful for any help I can get!
 * create a config module as a temporary solution pending a proper settings function
 * get a simple CGI-BIN up which talks to the API
 * start a TVH Epg web interface in Python
+
+
+## Acknowledgement and thanks
+
+This program only exists because of the awesome developers working on 
+https://tvheadend.org
+
+
