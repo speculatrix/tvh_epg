@@ -20,8 +20,7 @@ That said, I'd be grateful for any help I can get!
 
 ### TBD
 
-* make channel link generate an m3u with the auth token
-* analyse the EPG data for a specific channel
+* analyse the EPG data for a specific channel so can calculate duration
 * create a proper now/next view timeline
 * start to use /var/lib/tvh_epg for settings and caches etc
 * implement user definable settings
@@ -33,6 +32,10 @@ That said, I'd be grateful for any help I can get!
 
 
 ### Done - in reverse order
+
+20180922
+* make channel link generate an m3u with the auth token
+* add status page (needs admin rights)
 
 20180921
 * make channel name be link to the live stream
