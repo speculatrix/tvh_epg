@@ -49,6 +49,10 @@ That said, I'd be grateful for any help I can get!
 * get a simple CGI-BIN up which talks to the API
 * start a TVH Epg web interface in Python
 
+### Screenshots
+
+<img src="https://raw.githubusercontent.com/speculatrix/tvh_epg/master/Screenshot_20180922_223956.png" />
+
 
 ## Acknowledgement and thanks
 
