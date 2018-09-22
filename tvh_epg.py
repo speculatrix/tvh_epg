@@ -23,6 +23,9 @@ from	tvh_epg_config	import DOCROOT_DEFAULT
 ################################################################################
 
 
+TS_URL_STC = TS_URL + 'api/status/connections'
+TS_URL_STI = TS_URL + 'api/status/inputs'
+
 TS_URL_SVI = TS_URL + 'api/serverinfo'
 TS_URL_EPG = TS_URL + 'api/epg/events/grid'
 TS_URL_CHN = TS_URL + 'api/channel/grid'
@@ -75,7 +78,8 @@ def get_channel_dict():
 
     tvh_response = requests.get('%s?limit=400' % (TS_URL_CHN, ), auth=(TS_USER, TS_PASS))
     tvh_json = tvh_response.json()
-    #print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, indent=4, separators=(',', ': ')) )
+    #print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, \
+    #                                   indent=4, separators=(',', ': ')) )
 
     channel_map = {}    # full channel info
     channel_list = []   # build a list of channel names
@@ -126,9 +130,12 @@ def page_channels():
     print('<h1>Channels</h1>')
 
     channel_dict = get_channel_dict()
-    #print('<pre>%s</pre>' % json.dumps(channel_dict, sort_keys=True, indent=4, separators=(',', ': ')) )
+    #print('<pre>%s</pre>' % json.dumps(channel_dict, sort_keys=True,
+    #                                   indent=4, separators=(',', ': ')) )
     cdl = len(channel_dict)
-    print('<p><b>Channel count: %d</b></p><p>Note, the links are the streams, open in VLC - you can drag and drop the link into a VLC window</p>' % (cdl, ))
+    print('''<p><b>Channel count: %d</b></p>
+<p>Note, the links are the streams, open in VLC
+- you can drag and drop the link into a VLC window</p>''' % (cdl, ))
 
     if cdl:
         print('''  <table>
@@ -140,9 +147,9 @@ def page_channels():
 ''')
         for ch_name in channel_dict:
             chan = channel_dict[ch_name]
-            play_url = '%s/%s' % (TS_URL_STR, chan['uuid'], )
+            play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
             print('    <tr>')
-            print('      <td><a href="%s">%s</a></td>' % (play_url, ch_name, ))
+            print('      <td><a href="%s" download="tvheadend.m3u">%s</a></td>' % (play_url, ch_name, ))
             print('      <td>%s</td>' % (chan['number'], ))
             print('      <td>%s</td>' % (chan['uuid'], ))
             print('    </tr>')
@@ -158,7 +165,9 @@ def page_epg():
     channel_dict = get_channel_dict()
     cdl = len(channel_dict)
     if cdl:
-        print('<p><b>Channel count: %d</b></p><p>Note, the links are the streams, open in VLC - you can drag and drop the link into a VLC window</p>' % (cdl, ))
+        print('''<p><b>Channel count: %d</b></p>
+<p>Note, the links are the streams, open in VLC
+- you can drag and drop the link into a VLC window</p>''' % (cdl, ))
 
         # get the EPG data for each channel
         print('''  <table>
@@ -173,8 +182,8 @@ def page_epg():
 ''')
         for ch_name in channel_dict:
             chan = channel_dict[ch_name]
-            play_url = '%s/%s' % (TS_URL_STR, chan['uuid'], )
-            print('    <tr>\n      <td><a href="%s">%s</a></td>' % (play_url, ch_name, ))
+            play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
+            print('    <tr>\n      <td><a href="%s" download="tvheadend.m3u">%s</a></td>' % (play_url, ch_name, ))
             chan['epg'] = []
             req_url = '%s?limit=5&channel=%s' % (TS_URL_EPG, chan['uuid'], )
             tvh_response = requests.get(req_url, auth=(TS_USER, TS_PASS))
@@ -183,14 +192,17 @@ def page_epg():
                 try:
                     for entry in tvh_json['entries']:
                         if 'title' in entry:
-                            print('      <td valign="top" nowrap><b>%s</b><br />start %s<br />stop %s</td>' % (entry['title'], epoch_to_localtime(entry['start']), epoch_to_localtime(entry['stop']), ) )
+                            print('''      <td valign="top" nowrap><b>%s</b><br />
+start %s<br />stop %s</td>''' % (entry['title'],
+                                 epoch_to_localtime(entry['start']),
+                                 epoch_to_localtime(entry['stop']), ) )
                         else:
                             print('      <td>&nbsp;</td>')
                     #chan['epg'].append(tvh_json['entries'])
                     #print(', '.join(tvh_json['entries'] ))
                     #print(tvh_json['entries'][0]['title'])
-                except Exception as e:
-                    print('      <td>' + str(e) + '</td>')
+                except Exception as generic_exception:
+                    print('      <td>' + str(generic_exception) + '</td>')
             else:
                 print('      <td colspan="5">&nbsp</td>')
             print('    </tr>')
@@ -260,10 +272,26 @@ def page_epg():
 
 
 ################################################################################
+def page_m3u(p_uuid):
+    '''generates an m3u file to be played in e.g. vlc'''
+
+    print('#EXTM3U')
+    print('%s/%s' % (TS_URL_STR, p_uuid, ))
+
+
+################################################################################
+def page_error():
+    '''prints an error'''
+
+    print('<h1>Error</h1>')
+    print('<p>Something went wrong</p>')
+
+
+################################################################################
 def page_serverinfo():
     '''prints the server information, useful to check the API call is working at all'''
 
-    print('<h1>server info</h1>')
+    print('<h1>Server Info</h1>')
 
     tvh_response = requests.get(TS_URL_SVI, auth=(TS_USER, TS_PASS))
     tvh_json = tvh_response.json()
@@ -272,11 +300,43 @@ def page_serverinfo():
 
 
 ################################################################################
-def web_interface():
-    '''this is the function which produces the web interface, as opposed
-    to the cron function'''
+def page_status():
+    '''prints the status information, useful to check the API call is working at all'''
 
-    illegal_param_count = 0
+    print('<h1>Server Status</h1>')
+
+    print('<h2>Input Status</h2>')
+    tvh_response = requests.get(TS_URL_STI, auth=(TS_USER, TS_PASS))
+    if tvh_response.status_code == 200:
+        tvh_json = tvh_response.json()
+        print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True,
+                                           indent=4, separators=(',', ': ')) )
+    else:
+        print('<p>HTTP error response %d'
+              '- does configured user have admin rights?</p>' % (tvh_response.status_code, ) )
+
+    print('<h2>Connection Status</h2>')
+    tvh_response = requests.get(TS_URL_STC, auth=(TS_USER, TS_PASS))
+    if tvh_response.status_code == 200:
+        tvh_json = tvh_response.json()
+        print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True,
+                                           indent=4, separators=(',', ': ')) )
+    else:
+        print('<p>HTTP error response %d'
+              '- does configured user have admin rights?</p>' % (tvh_response.status_code, ) )
+
+
+################################################################################
+def m3u_page_header():
+    '''page header for m3u playlists'''
+
+    print('Content-Type: audio/x-mpegurl\n')
+
+
+################################################################################
+def html_page_header():
+    '''standard html page header'''
+
 
     #print('Content-Type: text/plain\n')    # plain text for extreme debugging
     print('Content-Type: text/html\n')     # HTML is following
@@ -312,31 +372,68 @@ table td, table th {
 <body>
 ''')
 
-    print('<a href="/python_errors/?C=M;O=A" target="_new">/python_errors (new window)</a><br /><br />')
+    print('<a href="/python_errors/?C=M;O=A" target="_new">'
+          '/python_errors (new window)</a><br /><br />')
 
 
     print('''
 <b>Menu:</b>&nbsp;<a href="?page=epg">EPG</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=channels">Channels</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=serverinfo">Server Info</a>&nbsp;&nbsp;&nbsp;
+<a href="?page=status">Status</a>&nbsp;&nbsp;&nbsp;
 ''')
 
-
-    if 'page' in CGI_PARAMS:
-        p_page = CGI_PARAMS.getvalue('page')
-
-        if p_page == 'serverinfo':
-            page_serverinfo()
-        elif p_page == 'epg':
-            page_epg()
-        elif p_page == 'channels':
-            page_channels()
-        else:
-            illegal_param_count += 1
-
+################################################################################
+def html_page_footer():
+    '''no surprises'''
 
     print('''</body>
 </html>''')
+
+
+################################################################################
+def web_interface():
+    '''provides web interface'''
+
+
+    illegal_param_count = 0
+    if 'page' in CGI_PARAMS:
+        p_page = CGI_PARAMS.getvalue('page')
+    else:
+        p_page = 'error'
+
+    if p_page == 'serverinfo':
+        html_page_header()
+        page_serverinfo()
+        html_page_footer()
+    elif p_page == 'status':
+        html_page_header()
+        page_status()
+        html_page_footer()
+    elif p_page == 'epg':
+        html_page_header()
+        page_epg()
+        html_page_footer()
+    elif p_page == 'error':
+        html_page_header()
+        page_error()
+        html_page_footer()
+    elif p_page == 'channels':
+        html_page_header()
+        page_channels()
+        html_page_footer()
+    elif p_page == 'm3u':
+        if 'uuid' in CGI_PARAMS:
+            p_uuid = CGI_PARAMS.getvalue('uuid')
+            m3u_page_header()
+            page_m3u(p_uuid)
+        else:
+            html_page_header()
+            page_error()
+            html_page_footer()
+    else:
+        illegal_param_count += 1
+
 
 
 ################################################################################
