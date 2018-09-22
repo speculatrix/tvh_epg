@@ -20,11 +20,16 @@ That said, I'd be grateful for any help I can get!
 
 ### TBD
 
+* make channel link generate an m3u with the auth token
 * analyse the EPG data for a specific channel
 * create a proper now/next view timeline
 * start to use /var/lib/tvh_epg for settings and caches etc
 * implement user definable settings
 * save a cache of channel information
+* make display more attractive
+* add feature to hover mouse for more information
+* get the channel icons
+* add a filter feature, to exclude or only include channels
 
 
 ### Done - in reverse order
