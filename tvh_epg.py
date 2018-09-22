@@ -193,13 +193,20 @@ def page_epg():
             req_url = '%s?limit=5&channel=%s' % (TS_URL_EPG, chan['uuid'], )
             tvh_response = requests.get(req_url, auth=(TS_USER, TS_PASS))
             tvh_json = tvh_response.json()
+            # this channel produces unicode codec errors, see below
+            #if 'Gael' in ch_name:
+            #    print(tvh_response.content)
             if len(tvh_json['entries']):
                 for entry in tvh_json['entries']:
                     if 'title' in entry:
+                        print('       <td valign="top" nowrap>')
                         try:
-                            print('      <td valign="top" nowrap><b>%s</b>' % (entry['title'], ))
+                            # FIXME! this stops the unicode error
+                            # 'ascii' codec can't encode character '\xe8' in position 4: ordinal not in range(128) 
+                            print('<b>%s</b>' % (bytes.decode(entry['title'].encode("ascii", "ignore")), ))
+                            #print('<b>%s</b>' % (entry['title'], ))
                         except Exception as generic_exception:
-                            print('      <td>' + str(generic_exception) + '</td>')
+                            print(str(generic_exception))
                         print('<br />start %s<br />stop %s</td>'        \
                               % (epoch_to_localtime(entry['start']),    \
                                  epoch_to_localtime(entry['stop']), ) )
