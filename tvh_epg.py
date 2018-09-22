@@ -34,6 +34,8 @@ TS_URL_STR = TS_URL + 'stream/channel'
 CGI_PARAMS = cgi.FieldStorage()
 
 
+EPG = 'epg'
+
 ################################################################################
 def secs_to_human(t_secs):
     '''turns a duration in seconds into Xd HH:MM:SS'''
@@ -180,29 +182,32 @@ def page_epg():
       <th>Next</th>
     </tr>
 ''')
+        # iterate through the channel list by name
         for ch_name in channel_dict:
             chan = channel_dict[ch_name]
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
             print('    <tr>\n      <td><a href="%s" download="tvheadend.m3u">%s</a></td>' % (play_url, ch_name, ))
-            chan['epg'] = []
+
+            # grab the EPG data for the channel, store in the channel dict
+            chan[EPG] = []
             req_url = '%s?limit=5&channel=%s' % (TS_URL_EPG, chan['uuid'], )
             tvh_response = requests.get(req_url, auth=(TS_USER, TS_PASS))
             tvh_json = tvh_response.json()
             if len(tvh_json['entries']):
-                try:
-                    for entry in tvh_json['entries']:
-                        if 'title' in entry:
-                            print('''      <td valign="top" nowrap><b>%s</b><br />
-start %s<br />stop %s</td>''' % (entry['title'],
-                                 epoch_to_localtime(entry['start']),
+                for entry in tvh_json['entries']:
+                    if 'title' in entry:
+                        try:
+                            print('      <td valign="top" nowrap><b>%s</b>' % (entry['title'], ))
+                        except Exception as generic_exception:
+                            print('      <td>' + str(generic_exception) + '</td>')
+                        print('<br />start %s<br />stop %s</td>'        \
+                              % (epoch_to_localtime(entry['start']),    \
                                  epoch_to_localtime(entry['stop']), ) )
-                        else:
-                            print('      <td>&nbsp;</td>')
-                    #chan['epg'].append(tvh_json['entries'])
-                    #print(', '.join(tvh_json['entries'] ))
-                    #print(tvh_json['entries'][0]['title'])
-                except Exception as generic_exception:
-                    print('      <td>' + str(generic_exception) + '</td>')
+                    else:
+                        print('      <td>&nbsp;</td>')
+                #chan[EPG].append(tvh_json['entries'])
+                #print(', '.join(tvh_json['entries'] ))
+                #print(tvh_json['entries'][0]['title'])
             else:
                 print('      <td colspan="5">&nbsp</td>')
             print('    </tr>')
@@ -410,7 +415,7 @@ def web_interface():
         html_page_header()
         page_status()
         html_page_footer()
-    elif p_page == 'epg':
+    elif p_page == EPG:
         html_page_header()
         page_epg()
         html_page_footer()
