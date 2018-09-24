@@ -5,6 +5,7 @@ a really really basic EPG for TVHeadend
 
 import  cgi
 import  cgitb
+import  datetime
 import  json
 import  os
 import  sys
@@ -55,15 +56,19 @@ def secs_to_human(t_secs):
     if r_days > 0:
         h_days = '%dd, ' % r_days
 
-    h_time = '%s%02d:%02d:%02d' % (h_days, r_hours, r_mins, r_secs, )
+    #h_time = '%s%02d:%02d:%02d' % (h_days, r_hours, r_mins, r_secs, )
+    h_time = '%s%02d:%02d' % (h_days, r_hours, r_mins, )
 
     return h_time
 
 ################################################################################
-def epoch_to_localtime(epoch_time):
+def epoch_to_human(epoch_time):
     '''takes numeric sec since unix epoch and returns humanly readable time'''
 
-    return time.asctime(time.localtime(epoch_time))
+    #return time.asctime(time.localtime(epoch_time))
+
+    dt = datetime.datetime.fromtimestamp(epoch_time)
+    return dt.strftime("%H:%M")
 
 ################################################################################
 def save_channel_dict_to_cache():
@@ -78,7 +83,9 @@ def load_channel_dict_from_cache():
 def get_channel_dict():
     '''gets the channel listing and generats an ordered dict by name'''
 
-    tvh_response = requests.get('%s?limit=400' % (TS_URL_CHN, ), auth=(TS_USER, TS_PASS))
+    tvh_url = '%s?limit=400' % (TS_URL_CHN, )
+    tvh_response = requests.get(tvh_url, auth=(TS_USER, TS_PASS))
+    #print('<!-- get_channel_dict URL %s -->' % (tvh_url, ))
     tvh_json = tvh_response.json()
     #print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, \
     #                                   indent=4, separators=(',', ': ')) )
@@ -144,7 +151,6 @@ def page_channels():
     <tr>
       <th>Channel Name</th>
       <th>Channel Number</th>
-      <th>Channel UUID</th>
     </tr>
 ''')
         for ch_name in channel_dict:
@@ -153,7 +159,6 @@ def page_channels():
             print('    <tr>')
             print('      <td><a href="%s" download="tvheadend.m3u">%s</a></td>' % (play_url, ch_name, ))
             print('      <td>%s</td>' % (chan['number'], ))
-            print('      <td>%s</td>' % (chan['uuid'], ))
             print('    </tr>')
 
         print('</table>')
@@ -172,113 +177,48 @@ def page_epg():
 - you can drag and drop the link into a VLC window</p>''' % (cdl, ))
 
         # get the EPG data for each channel
-        print('''  <table>
+        print('''  <table width="1700px">
     <tr>
-      <th>Channel Name</th>
-      <th>Now</th>
-      <th>Next</th>
-      <th>Next</th>
-      <th>Next</th>
-      <th>Next</th>
+      <th width="80px">Channel Name</th>
+      <th width="1600px">Now / Next</th>
     </tr>
 ''')
         # iterate through the channel list by name
         for ch_name in channel_dict:
             chan = channel_dict[ch_name]
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
-            print('    <tr>\n      <td><a href="%s" download="tvheadend.m3u">%s</a></td>' % (play_url, ch_name, ))
+            print('    <tr>\n      <td width="80px"><a href="%s" download="tvheadend.m3u">%s</a></td>' % (play_url, ch_name, ))
 
-            # grab the EPG data for the channel, store in the channel dict
-            chan[EPG] = []
-            req_url = '%s?limit=5&channel=%s' % (TS_URL_EPG, chan['uuid'], )
+            # grab the EPG data for the channel
+            req_url = '%s?limit=3&channel=%s' % (TS_URL_EPG, chan['uuid'], )
+            #print('<!-- channel EPG URL %s -->' % (req_url, ))
             tvh_response = requests.get(req_url, auth=(TS_USER, TS_PASS))
             tvh_json = tvh_response.json()
-            # this channel produces unicode codec errors, see below
-            #if 'Gael' in ch_name:
-            #    print(tvh_response.content)
+
             if len(tvh_json['entries']):
+                #chan[EPG] = tvh_json['entries']
+                print('       <td valign="top" nowrap width="1600px"><div class="epg_row">')
                 for entry in tvh_json['entries']:
+                    time_start = int(entry['start'])
+                    time_stop = int(entry['stop'])
+                    duration = time_stop - time_start
+                    box_width = duration / 10
+                    print('<div class="epg_prog" style="width: %dpx; max-width: %dpx">' % (box_width, box_width,) )
                     if 'title' in entry:
-                        print('       <td valign="top" nowrap>')
                         try:
-                            # FIXME! this stops the unicode error
+                            # FIXME! this stops the unicode error seen on channel BBC R n Gael
                             # 'ascii' codec can't encode character '\xe8' in position 4: ordinal not in range(128) 
-                            print('<b>%s</b>' % (bytes.decode(entry['title'].encode("ascii", "ignore")), ))
-                            #print('<b>%s</b>' % (entry['title'], ))
+                            print('<b>%s</b><br />' % (bytes.decode(entry['title'].encode("ascii", "ignore")), ))
                         except Exception as generic_exception:
                             print(str(generic_exception))
-                        print('<br />start %s<br />stop %s</td>'        \
-                              % (epoch_to_localtime(entry['start']),    \
-                                 epoch_to_localtime(entry['stop']), ) )
                     else:
-                        print('      <td>&nbsp;</td>')
-                #chan[EPG].append(tvh_json['entries'])
-                #print(', '.join(tvh_json['entries'] ))
-                #print(tvh_json['entries'][0]['title'])
+                        print('<i>untitled</i><br />') # empty table cell
+                    print('%s / %s'            \
+                          % (epoch_to_human(time_start), secs_to_human(duration), ))
+                    print('      </div>')
+                print('<div style="clear:both; font-size:1px;"></div></div></td>')
             else:
-                print('      <td colspan="5">&nbsp</td>')
-            print('    </tr>')
-        print('</table>')
-
-    return
-
-    ###########################################################################
-    #### below is stuff am thinking about
-    if 'totalCount' in tvh_json:
-        print('<p>Entries: %d</p>' % tvh_json['totalCount'] )
-
-    if 'entries' in tvh_json:
-        channel_map = {}
-        for entry in tvh_json['entries']:
-            channel_uuid = entry['channelUuid']
-            if channel_uuid not in channel_map:
-                channel_map[channel_uuid] = {}
-
-            if 'channelNumber' in entry:
-                channel_map[channel_uuid]['channelNumber'] = int(entry['channelNumber'])
-            else:
-                channel_map[channel_uuid]['channelNumber'] = -1
-
-            if 'channelName' in entry:
-                channel_map[channel_uuid]['channelName'] = entry['channelName']
-            else:
-                channel_map[channel_uuid]['channelName'] = ''
-
-            if 'title' in entry:
-                channel_map[channel_uuid]['title'] = entry['title']
-            else:
-                channel_map[channel_uuid]['title'] = ''
-
-            if 'start' in entry:
-                channel_map[channel_uuid]['start'] = entry['start']
-            else:
-                channel_map[channel_uuid]['start'] = 0
-
-            if 'stop' in entry:
-                channel_map[channel_uuid]['stop'] = entry['stop']
-            else:
-                channel_map[channel_uuid]['stop'] = 0
-
-        print('''  <table>
-    <tr>
-      <th>Number</th>
-      <th>Name</th>
-      <th>Now</th>
-      <th>Start</th>
-      <th>Stop</th>
-      <th>Duration</th>
-    </tr>''')
-        for key in sorted(channel_map):
-            time_start = int(channel_map[key]['start'])
-            time_stop = int(channel_map[key]['stop'])
-            duration = time_stop - time_start
-            print('    <tr>')
-            print('        <td>%d</td>' % (channel_map[key]['channelNumber'], ))
-            print('        <td>%s</td>' % (channel_map[key]['channelName'], ))
-            #print('        <td>%s</td>' % (channel_map[key]['title'], ))
-            print('        <td>%s</td>' % (time.asctime(time.localtime(time_start)), ))
-            print('        <td>%s</td>' % (time.asctime(time.localtime(time_stop)), ))
-            print('        <td>%s</td>' % (secs_to_human(duration)), )
+                print('      &nbsp</td>')
             print('    </tr>')
         print('</table>')
 
@@ -307,6 +247,7 @@ def page_serverinfo():
 
     tvh_response = requests.get(TS_URL_SVI, auth=(TS_USER, TS_PASS))
     tvh_json = tvh_response.json()
+    #print('<!-- serverinfo URL %s -->' % (TS_URL_SVI, ))
 
     print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, indent=4, separators=(',', ': ')) )
 
@@ -319,6 +260,7 @@ def page_status():
 
     print('<h2>Input Status</h2>')
     tvh_response = requests.get(TS_URL_STI, auth=(TS_USER, TS_PASS))
+    #print('<!-- status inputs URL %s -->' % (TS_URL_STI, ))
     if tvh_response.status_code == 200:
         tvh_json = tvh_response.json()
         print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True,
@@ -329,6 +271,7 @@ def page_status():
 
     print('<h2>Connection Status</h2>')
     tvh_response = requests.get(TS_URL_STC, auth=(TS_USER, TS_PASS))
+    #print('<!-- status connections URL %s -->' % (TS_URL_STC, ))
     if tvh_response.status_code == 200:
         tvh_json = tvh_response.json()
         print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True,
@@ -362,14 +305,29 @@ def html_page_header():
     <title>TVH EPG</title>
     <style type="text/css">
 
-table {
-    border-collapse: collapse;
-    border-style: hidden;
-}
+    table {
+        border-collapse: collapse;
+        border-style: hidden;
+    }
 
-table td, table th {
-    border: 1px solid black;
-}
+    table td, table th {
+        border: 1px solid black;
+    }
+
+    .epg_row
+    {
+        vertical-align: top;    /* Makes sure all the divs are correctly aligned. */
+        width: 100%;
+        height: 100%;
+        display: inline-flex;   /* prevents wrapping */
+    }
+    .epg_prog
+    {
+        background-color: #e0f8e0;
+        border: 4px #f8fff8;
+        border-style: solid;
+        float: left;
+    }
 
     pre {
       white-space: pre-wrap;       /* Since CSS 2.1 */
@@ -444,6 +402,9 @@ def web_interface():
             page_error()
             html_page_footer()
     else:
+        html_page_header()
+        page_error()
+        html_page_footer()
         illegal_param_count += 1
 
 
