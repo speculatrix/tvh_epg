@@ -20,7 +20,6 @@ That said, I'd be grateful for any help I can get!
 
 ### TBD
 
-* analyse the EPG data for a specific channel so can calculate duration
 * create a proper now/next view timeline
 * start to use /var/lib/tvh_epg for settings and caches etc
 * implement user definable settings
@@ -32,6 +31,12 @@ That said, I'd be grateful for any help I can get!
 
 
 ### Done - in reverse order
+
+20180924
+* some progress using CSS to make now/next boxes be proportionate
+
+20180923
+* analyse the EPG data for a specific channel so can calculate duration
 
 20180922
 * make channel link generate an m3u with the auth token
@@ -51,7 +56,7 @@ That said, I'd be grateful for any help I can get!
 
 ### Screenshots
 
-<img src="https://raw.githubusercontent.com/speculatrix/tvh_epg/master/Screenshot_20180922_223956.png" />
+<img src="https://raw.githubusercontent.com/speculatrix/tvh_epg/master/Screenshot_20180924_231517.png" />
 
 
 ## Acknowledgement and thanks
