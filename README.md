@@ -60,3 +60,9 @@ This program only exists because of the awesome developers working on
 https://tvheadend.org
 
 
+## Useful links
+
+https://github.com/dave-p/TVH-API-docs - the API docs
+
+https://tvheadend.org/boards/5/topics/34232 - the TVH forum discussion which sparked this off
+
