@@ -37,6 +37,10 @@ CGI_PARAMS = cgi.FieldStorage()
 
 EPG = 'epg'
 
+SECS_P_PIXEL = 10           # how many seconds per pixel
+
+MAX_FUTURE = 9000   # 2.5 hours - how far into the future to show a prog
+
 ################################################################################
 def secs_to_human(t_secs):
     '''turns a duration in seconds into Xd HH:MM:SS'''
@@ -50,7 +54,7 @@ def secs_to_human(t_secs):
 
     r_hours = t_hours - r_days * 24
     r_mins = t_mins - r_days * 24 * 60      - r_hours * 60
-    r_secs = t_secs - r_days * 24 * 60 * 60 - r_hours * 60 * 60 - r_mins * 60
+    #r_secs = t_secs - r_days * 24 * 60 * 60 - r_hours * 60 * 60 - r_mins * 60
 
     h_days = ''
     if r_days > 0:
@@ -67,8 +71,8 @@ def epoch_to_human(epoch_time):
 
     #return time.asctime(time.localtime(epoch_time))
 
-    dt = datetime.datetime.fromtimestamp(epoch_time)
-    return dt.strftime("%H:%M")
+    human_dt = datetime.datetime.fromtimestamp(epoch_time)
+    return human_dt.strftime("%H:%M")
 
 ################################################################################
 def save_channel_dict_to_cache():
@@ -169,6 +173,8 @@ def page_epg():
 
     print('<h1>EPG</h1>')
 
+    epoch_time = time.time()
+
     channel_dict = get_channel_dict()
     cdl = len(channel_dict)
     if cdl:
@@ -180,17 +186,17 @@ def page_epg():
         print('''  <table width="1700px">
     <tr>
       <th width="80px">Channel Name</th>
-      <th width="1600px">Now / Next</th>
+      <th width="1600px" align="left"><b>%s</b></th>
     </tr>
-''')
+''' % (epoch_to_human(epoch_time), ) )
         # iterate through the channel list by name
         for ch_name in channel_dict:
             chan = channel_dict[ch_name]
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
-            print('    <tr>\n      <td width="80px"><a href="%s" download="tvheadend.m3u">%s</a></td>' % (play_url, ch_name, ))
+            print('    <tr>\n      <td width="80px" align="right"><a href="%s" download="tvheadend.m3u">%s</a><br />%d</td>' % (play_url, ch_name, chan['number']))
 
             # grab the EPG data for the channel
-            req_url = '%s?limit=3&channel=%s' % (TS_URL_EPG, chan['uuid'], )
+            req_url = '%s?limit=6&channel=%s' % (TS_URL_EPG, chan['uuid'], )
             #print('<!-- channel EPG URL %s -->' % (req_url, ))
             tvh_response = requests.get(req_url, auth=(TS_USER, TS_PASS))
             tvh_json = tvh_response.json()
@@ -198,24 +204,44 @@ def page_epg():
             if len(tvh_json['entries']):
                 #chan[EPG] = tvh_json['entries']
                 print('       <td valign="top" nowrap width="1600px"><div class="epg_row">')
+
+                entry_num = 0
                 for entry in tvh_json['entries']:
                     time_start = int(entry['start'])
                     time_stop = int(entry['stop'])
-                    duration = time_stop - time_start
-                    box_width = duration / 10
-                    print('<div class="epg_prog" style="width: %dpx; max-width: %dpx">' % (box_width, box_width,) )
-                    if 'title' in entry:
-                        try:
-                            # FIXME! this stops the unicode error seen on channel BBC R n Gael
-                            # 'ascii' codec can't encode character '\xe8' in position 4: ordinal not in range(128) 
-                            print('<b>%s</b><br />' % (bytes.decode(entry['title'].encode("ascii", "ignore")), ))
-                        except Exception as generic_exception:
-                            print(str(generic_exception))
-                    else:
-                        print('<i>untitled</i><br />') # empty table cell
-                    print('%s / %s'            \
-                          % (epoch_to_human(time_start), secs_to_human(duration), ))
-                    print('      </div>')
+
+                    # don't show far future, stop screen being too wide
+                    if time_start - epoch_time < MAX_FUTURE:
+                        duration = time_stop - time_start
+                        time_left = duration
+                        box_width = duration / SECS_P_PIXEL
+
+                        time_offset = time_start - epoch_time
+                        if time_offset < 0:
+                            time_left = time_stop - epoch_time
+                            box_width = time_left / SECS_P_PIXEL
+                            print('<div class="epg_now" style="width: %dpx; max-width: %dpx">' % (box_width, box_width,) )
+                        elif entry_num == 0:
+                            width_offset = time_offset / SECS_P_PIXEL
+                            print('<div class="epg_none" style="width: %dpx; max-width: %dpx">%d</div>' % (width_offset, width_offset, width_offset,) )
+                        else:
+                            print('<div class="epg_next" style="width: %dpx; max-width: %dpx">' % (box_width, box_width,) )
+                        if 'title' in entry:
+                            try:
+                                # FIXME! this stops the unicode error seen on channel BBC R n Gael
+                                # 'ascii' codec can't encode character '\xe8' in position 4: ordinal not in range(128)
+                                print('<b>%s</b><br />' % (bytes.decode(entry['title'].encode("ascii", "ignore")), ))
+                            except Exception as generic_exception:
+                                print(str(generic_exception))
+                        else:
+                            print('<i>untitled</i><br />') # empty table cell
+                        if time_offset > 0:
+                            print('start %s / duration %s'            \
+                                  % (epoch_to_human(time_start), secs_to_human(duration), ))
+                        else:
+                            print('%s left of %s' % (secs_to_human(time_left), secs_to_human(duration), ))
+                        print('      </div>')
+                        entry_num += 1
                 print('<div style="clear:both; font-size:1px;"></div></div></td>')
             else:
                 print('      &nbsp</td>')
@@ -321,10 +347,27 @@ def html_page_header():
         height: 100%;
         display: inline-flex;   /* prevents wrapping */
     }
-    .epg_prog
+    .epg_next
+    {
+        background-color: #e0e0f8;
+        #border: 4px #f8fff8;
+        border: 1px #0000ff;
+        border-style: solid;
+        float: left;
+    }
+    .epg_now
     {
         background-color: #e0f8e0;
-        border: 4px #f8fff8;
+        #border: 4px #f8fff8;
+        border: 1px #ff0000;
+        border-style: solid;
+        float: left;
+    }
+
+    .epg_none
+    {
+        background-color: #ffffff;
+        border: 4px #000000;
         border-style: solid;
         float: left;
     }
