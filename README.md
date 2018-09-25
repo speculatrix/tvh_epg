@@ -1,12 +1,14 @@
 # tvh_epg
 
-This is just the very start of this project, at the moment it's just a
-proof of concept, a simple python3 program which grabs channel and EPG
-data from a TVHeadEnd server
- There's no point in you playing with it unless you just
-want to see some python being hacked out.
+This is the early days for this project, at the moment it's just
+a basic now/next electronic program guide for TVHeaded.
 
-That said, I'd be grateful for any help I can get!
+It's a simple python3 cgi-bin program which grabs channel and EPG
+data from a TVHeadEnd server and presents it in a grid form, with
+a link to click to play the channel.
+
+I expect to add more features to make it more useful... I'd be
+grateful for any help I can get!
 
 
 ## installation
@@ -49,7 +51,7 @@ That said, I'd be grateful for any help I can get!
 
 20180920:
 * create a github repo and push some stuff in there
-* get a simple web page that extracts and displays any old EPG data 
+* get a simple web page that extracts and displays any old EPG data
 * create a config module as a temporary solution pending a proper settings function
 * get a simple CGI-BIN up which talks to the API
 * start a TVH Epg web interface in Python
@@ -61,7 +63,7 @@ That said, I'd be grateful for any help I can get!
 
 ## Acknowledgement and thanks
 
-This program only exists because of the awesome developers working on 
+This program only exists because of the awesome developers working on
 https://tvheadend.org
 
 
