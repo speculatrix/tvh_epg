@@ -13,6 +13,8 @@ grateful for any help I can get!
 
 ## installation
 
+* install a web server that can execute CGI-BIN programs, e.g. apache2 with "sudo apt-get install apache2"
+* enable cgi-bin programs e.g. run "sudo a2enmod cgid" 
 * put the tvh_epg.py into /usr/lib/cgi-bin
 * put the config file into /usr/lib/cgi-bin/tvh_epg_config/
 * edit the config with your server details
