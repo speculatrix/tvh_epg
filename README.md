@@ -36,6 +36,14 @@ grateful for any help I can get!
 
 ### Done - in reverse order
 
+20180926
+* started the recording function
+* colour coded now/next
+* sets a time limit to limit width, not just number of EPG events
+
+20180925
+* got now/next boxes to be good proportions
+
 20180924
 * some progress using CSS to make now/next boxes be proportionate
 
