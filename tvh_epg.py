@@ -20,6 +20,10 @@ from	tvh_epg_config	import TS_URL
 from	tvh_epg_config	import DOCROOT_DEFAULT
 
 # pylint:disable=bad-whitespace
+# pylint:disable=too-many-branches
+# pylint:disable=too-many-locals
+# pylint:disable=too-many-nested-blocks
+# pylint:disable=too-many-statements
 
 ################################################################################
 
@@ -160,10 +164,10 @@ def page_channels():
         for ch_name in channel_dict:
             chan = channel_dict[ch_name]
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
-            print('    <tr>')
-            print('      <td><a href="%s" download="tvheadend.m3u">%s</a></td>' % (play_url, ch_name, ))
-            print('      <td>%s</td>' % (chan['number'], ))
-            print('    </tr>')
+            print('''    <tr>
+      <td><a href="%s" download="tvheadend.m3u">%s</a></td>
+      <td>%s</td>
+    </tr>''' % (play_url, ch_name, chan['number'], ))
 
         print('</table>')
 
@@ -186,14 +190,16 @@ def page_epg():
         print('''  <table width="1700px">
     <tr>
       <th width="80px">Channel Name</th>
-      <th width="1600px" align="left"><b>%s</b></th>
+      <th width="1600px" align="left"><b>It's now %s</b></th>
     </tr>
 ''' % (epoch_to_human(epoch_time), ) )
         # iterate through the channel list by name
         for ch_name in channel_dict:
             chan = channel_dict[ch_name]
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
-            print('    <tr>\n      <td width="80px" align="right"><a href="%s" download="tvheadend.m3u">%s</a><br />%d</td>' % (play_url, ch_name, chan['number']))
+            print('''    <tr>
+      <td width="80px" align="right"><a href="%s" download="tvheadend.m3u">%s</a>
+<br />%d</td>''' % (play_url, ch_name, chan['number']))
 
             # grab the EPG data for the channel
             req_url = '%s?limit=6&channel=%s' % (TS_URL_EPG, chan['uuid'], )
@@ -220,26 +226,36 @@ def page_epg():
                         if time_offset < 0:
                             time_left = time_stop - epoch_time
                             box_width = time_left / SECS_P_PIXEL
-                            print('<div class="epg_now" style="width: %dpx; max-width: %dpx">' % (box_width, box_width,) )
+                            print('<div class="epg_now" style="width: '
+                                  '%dpx; max-width: %dpx">' % (box_width, box_width,) )
                         elif entry_num == 0:
                             width_offset = time_offset / SECS_P_PIXEL
-                            print('<div class="epg_none" style="width: %dpx; max-width: %dpx">%d</div>' % (width_offset, width_offset, width_offset,) )
+                            print('<div class="epg_none" style="width: %dpx; '
+                                  'max-width: %dpx">%d</div>'
+                                  % (width_offset, width_offset, width_offset,) )
                         else:
-                            print('<div class="epg_next" style="width: %dpx; max-width: %dpx">' % (box_width, box_width,) )
+                            print('<div class="epg_next" style="width: '
+                                  '%dpx; max-width: %dpx">' % (box_width, box_width,) )
                         if 'title' in entry:
                             try:
                                 # FIXME! this stops the unicode error seen on channel BBC R n Gael
-                                # 'ascii' codec can't encode character '\xe8' in position 4: ordinal not in range(128)
-                                print('<b>%s</b><br />' % (bytes.decode(entry['title'].encode("ascii", "ignore")), ))
-                            except Exception as generic_exception:
-                                print(str(generic_exception))
+                                # 'ascii' codec can't encode character '\xe8'
+                                # in position 4: ordinal not in range(128)
+                                print('<b>%s</b><br /><a href="?page=record&event_id=%s">'
+                                      '&reg;</a>&nbsp;&nbsp;'
+                                      #% (entry['title'],
+                                      % (bytes.decode(entry['title'].encode("ascii", "ignore")),
+                                         entry['eventId'], ))
+                            except UnicodeEncodeError as uc_ex:
+                                print('%s - %s' % (type(uc_ex).__name__, str(uc_ex), ))
                         else:
                             print('<i>untitled</i><br />') # empty table cell
                         if time_offset > 0:
-                            print('start %s / duration %s'            \
+                            print('start %s<br />duration %s'            \
                                   % (epoch_to_human(time_start), secs_to_human(duration), ))
                         else:
-                            print('%s left of %s' % (secs_to_human(time_left), secs_to_human(duration), ))
+                            print('%s left of %s'
+                                  % (secs_to_human(time_left), secs_to_human(duration), ))
                         print('      </div>')
                         entry_num += 1
                 print('<div style="clear:both; font-size:1px;"></div></div></td>')
@@ -263,6 +279,14 @@ def page_error():
 
     print('<h1>Error</h1>')
     print('<p>Something went wrong</p>')
+
+
+################################################################################
+def page_record():
+    '''checks the recording param and generated DVR record'''
+
+    print('<h1>Record Item</h1>')
+    print('<p>Work In Progress</p>')
 
 
 ################################################################################
@@ -349,25 +373,23 @@ def html_page_header():
     }
     .epg_next
     {
-        background-color: #e0e0f8;
-        #border: 4px #f8fff8;
-        border: 1px #0000ff;
+        background-color: #e8e8ff;
+        border: 1px #8080e0;
         border-style: solid;
         float: left;
     }
     .epg_now
     {
-        background-color: #e0f8e0;
-        #border: 4px #f8fff8;
-        border: 1px #ff0000;
+        background-color: #f0fff0;
+        border: 1px #408040;
         border-style: solid;
         float: left;
     }
 
     .epg_none
     {
-        background-color: #ffffff;
-        border: 4px #000000;
+        background-color: #808080;
+        border: 1px #404040;
         border-style: solid;
         float: left;
     }
@@ -409,21 +431,14 @@ def web_interface():
     '''provides web interface'''
 
 
-    illegal_param_count = 0
+    #illegal_param_count = 0
     if 'page' in CGI_PARAMS:
         p_page = CGI_PARAMS.getvalue('page')
     else:
-        p_page = 'error'
+        p_page = ''
+        #p_page = 'error'
 
-    if p_page == 'serverinfo':
-        html_page_header()
-        page_serverinfo()
-        html_page_footer()
-    elif p_page == 'status':
-        html_page_header()
-        page_status()
-        html_page_footer()
-    elif p_page == EPG:
+    if p_page == EPG:
         html_page_header()
         page_epg()
         html_page_footer()
@@ -444,11 +459,23 @@ def web_interface():
             html_page_header()
             page_error()
             html_page_footer()
+    elif p_page == 'record':
+        html_page_header()
+        page_record()
+        html_page_footer()
+    elif p_page == 'serverinfo':
+        html_page_header()
+        page_serverinfo()
+        html_page_footer()
+    elif p_page == 'status':
+        html_page_header()
+        page_status()
+        html_page_footer()
     else:
         html_page_header()
-        page_error()
+        #page_error()
         html_page_footer()
-        illegal_param_count += 1
+        #illegal_param_count += 1
 
 
 
