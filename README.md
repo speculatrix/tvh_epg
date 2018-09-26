@@ -60,7 +60,7 @@ grateful for any help I can get!
 
 ### Screenshots
 
-<img src="https://raw.githubusercontent.com/speculatrix/tvh_epg/master/Screenshot_20180924_231517.png" />
+<img src="https://raw.githubusercontent.com/speculatrix/tvh_epg/master/20180926_tvh_epg.png" />
 
 
 ## Acknowledgement and thanks
