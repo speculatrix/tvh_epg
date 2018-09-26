@@ -36,6 +36,8 @@ TS_URL_EPG = TS_URL + 'api/epg/events/grid'
 TS_URL_CHN = TS_URL + 'api/channel/grid'
 TS_URL_STR = TS_URL + 'stream/channel'
 
+TS_URL_DCG = TS_URL + 'api/dvr/config/grid'
+
 CGI_PARAMS = cgi.FieldStorage()
 
 
@@ -44,6 +46,7 @@ EPG = 'epg'
 SECS_P_PIXEL = 10           # how many seconds per pixel
 
 MAX_FUTURE = 9000   # 2.5 hours - how far into the future to show a prog
+
 
 ################################################################################
 def secs_to_human(t_secs):
@@ -69,6 +72,7 @@ def secs_to_human(t_secs):
 
     return h_time
 
+
 ################################################################################
 def epoch_to_human(epoch_time):
     '''takes numeric sec since unix epoch and returns humanly readable time'''
@@ -78,14 +82,30 @@ def epoch_to_human(epoch_time):
     human_dt = datetime.datetime.fromtimestamp(epoch_time)
     return human_dt.strftime("%H:%M")
 
-################################################################################
-def save_channel_dict_to_cache():
-    '''saves channel dict to cache file - FIXME'''
 
 ################################################################################
 def load_channel_dict_from_cache():
     '''load channel dict from cache file - FIXME'''
 
+
+################################################################################
+def save_channel_dict_to_cache():
+    '''saves channel dict to cache file - FIXME'''
+
+
+################################################################################
+def get_dvr_config_grid():
+    '''gets the dvr/config/grid dict'''
+
+    tvh_url = '%s' % (TS_URL_DCG, )
+    tvh_response = requests.get(tvh_url, auth=(TS_USER, TS_PASS))
+    print('<!-- get_dvr_config_grid URL %s -->' % (tvh_url, ))
+    tvh_json = tvh_response.json()
+
+    #print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, \
+    #                                   indent=4, separators=(',', ': ')) )
+
+    return tvh_json
 
 ################################################################################
 def get_channel_dict():
@@ -266,14 +286,6 @@ def page_epg():
 
 
 ################################################################################
-def page_m3u(p_uuid):
-    '''generates an m3u file to be played in e.g. vlc'''
-
-    print('#EXTM3U')
-    print('%s/%s' % (TS_URL_STR, p_uuid, ))
-
-
-################################################################################
 def page_error():
     '''prints an error'''
 
@@ -282,11 +294,37 @@ def page_error():
 
 
 ################################################################################
-def page_record():
+def page_m3u(p_uuid):
+    '''generates an m3u file to be played in e.g. vlc'''
+
+    print('#EXTM3U')
+    print('%s/%s' % (TS_URL_STR, p_uuid, ))
+
+
+################################################################################
+def page_record(p_event_id, p_profile):
     '''checks the recording param and generated DVR record'''
 
     print('<h1>Record Item</h1>')
-    print('<p>Work In Progress</p>')
+
+    if p_profile == '':
+        dcg_json = get_dvr_config_grid()
+
+        if 'entries' in dcg_json:
+            print('<form method="get">')
+            print('<input type="hidden" name="page" value="record" />')
+            print('<select name="profile">')
+            for entry in dcg_json['entries']:
+                print('<option value=%s>profile: %s</p>' % (entry['uuid'], entry['profile'], ))
+            print('</select>')
+            print('<input type="hidden" name="event_id" value="%s" />' % (p_event_id, ))
+            print('<input type="submit" name="Go" value="Go" />')
+            print('</form method="get">')
+
+    else:
+        print('Generating DVR record...')
+        print('<p>Work In Progress</p>')
+
 
 
 ################################################################################
@@ -430,6 +468,16 @@ def html_page_footer():
 def web_interface():
     '''provides web interface'''
 
+    if 'event_id' in CGI_PARAMS:
+        p_event_id = CGI_PARAMS.getvalue('event_id')
+    else:
+        p_event_id = ''
+
+    if 'profile' in CGI_PARAMS:
+        p_profile = CGI_PARAMS.getvalue('profile')
+    else:
+        p_profile = ''
+
 
     #illegal_param_count = 0
     if 'page' in CGI_PARAMS:
@@ -461,7 +509,7 @@ def web_interface():
             html_page_footer()
     elif p_page == 'record':
         html_page_header()
-        page_record()
+        page_record(p_event_id, p_profile)
         html_page_footer()
     elif p_page == 'serverinfo':
         html_page_header()
@@ -473,6 +521,7 @@ def web_interface():
         html_page_footer()
     else:
         html_page_header()
+        page_record(p_event_id, p_profile)
         #page_error()
         html_page_footer()
         #illegal_param_count += 1
