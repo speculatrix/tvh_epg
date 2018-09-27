@@ -28,15 +28,16 @@ from	tvh_epg_config	import DOCROOT_DEFAULT
 ################################################################################
 
 
+TS_URL_CHN = TS_URL + 'api/channel/grid'
+TS_URL_CBE = TS_URL + 'api/dvr/entry/create_by_event'
+TS_URL_DCG = TS_URL + 'api/dvr/config/grid'
+TS_URL_EPG = TS_URL + 'api/epg/events/grid'
+
 TS_URL_STC = TS_URL + 'api/status/connections'
 TS_URL_STI = TS_URL + 'api/status/inputs'
-
 TS_URL_SVI = TS_URL + 'api/serverinfo'
-TS_URL_EPG = TS_URL + 'api/epg/events/grid'
-TS_URL_CHN = TS_URL + 'api/channel/grid'
-TS_URL_STR = TS_URL + 'stream/channel'
 
-TS_URL_DCG = TS_URL + 'api/dvr/config/grid'
+TS_URL_STR = TS_URL + 'stream/channel'
 
 CGI_PARAMS = cgi.FieldStorage()
 
@@ -320,11 +321,25 @@ def page_record(p_event_id, p_profile):
             print('<input type="hidden" name="event_id" value="%s" />' % (p_event_id, ))
             print('<input type="submit" name="Go" value="Go" />')
             print('</form method="get">')
+        else:
+            print('<p><b>Error<b>, there were no DCG profiles</p>')
 
     else:
         print('Generating DVR record...')
         print('<p>Work In Progress</p>')
 
+        tvh_url = '%s?config_uuid=%s&event_id=%s' % (TS_URL_CBE, p_profile, p_event_id,)
+        tvh_response = requests.get(tvh_url, auth=(TS_USER, TS_PASS))
+        print('<!-- page_record CBE URL %s -->' % (tvh_url, ))
+        tvh_json = tvh_response.json()
+
+        #print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, \
+        #                                   indent=4, separators=(',', ': ')) )
+
+        if 'uuid' in tvh_json:
+            print('<p><b>Success</b></p>')
+        else:
+            print('<p><b>Failed</b></p>')
 
 
 ################################################################################

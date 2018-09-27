@@ -36,6 +36,9 @@ grateful for any help I can get!
 
 ### Done - in reverse order
 
+20180927
+* recording function works, but it's ugly
+
 20180926
 * started the recording function
 * colour coded now/next
