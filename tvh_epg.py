@@ -49,6 +49,18 @@ SECS_P_PIXEL = 10           # how many seconds per pixel
 MAX_FUTURE = 9000   # 2.5 hours - how far into the future to show a prog
 
 
+URL_ESCAPE_TABLE = {
+    " ": "%20"          ,
+}
+
+
+#####################################################################################################################
+def url_escape(text):
+    """escape special characters for URL"""
+    return "".join(URL_ESCAPE_TABLE.get(c, c) for c in text)
+
+
+
 ################################################################################
 def secs_to_human(t_secs):
     '''turns a duration in seconds into Xd HH:MM:SS'''
@@ -178,17 +190,20 @@ def page_channels():
     if cdl:
         print('''  <table>
     <tr>
+      <th>Channel EPG</th>
       <th>Channel Name</th>
       <th>Channel Number</th>
     </tr>
 ''')
         for ch_name in channel_dict:
+            chan_img = 'https://raw.githubusercontent.com/Elky666/TVLogos/master/%s.png' % (ch_name, )
             chan = channel_dict[ch_name]
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
             print('''    <tr>
+      <td><img width="12%%" height="12%%" src="%s" /></td>
       <td><a href="%s" download="tvheadend.m3u">%s</a></td>
       <td>%s</td>
-    </tr>''' % (play_url, ch_name, chan['number'], ))
+    </tr>''' % (url_escape(chan_img), play_url, ch_name, chan['number'], ))
 
         print('</table>')
 
@@ -210,20 +225,23 @@ def page_epg():
         # get the EPG data for each channel
         print('''  <table width="1700px">
     <tr>
-      <th width="80px">Channel Name</th>
-      <th width="1600px" align="left"><b>It's now %s</b></th>
+      <th width="100px">Channel Icon</th>
+      <th width="100px">Channel Name</th>
+      <th width="1500px" align="left"><b>It's now %s</b></th>
     </tr>
 ''' % (epoch_to_human(epoch_time), ) )
         # iterate through the channel list by name
         for ch_name in channel_dict:
             chan = channel_dict[ch_name]
+            chan_img = 'https://raw.githubusercontent.com/Elky666/TVLogos/master/%s.png' % (ch_name, )
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
             print('''    <tr>
-      <td width="80px" align="right"><a href="%s" download="tvheadend.m3u">%s</a>
-<br />%d</td>''' % (play_url, ch_name, chan['number']))
+      <td width="100px" align="right"><img height="12%%" src="%s" /></td>
+      <td width="100px" align="right"><a href="%s" download="tvheadend.m3u">%s</a>
+<br />%d</td>''' % (url_escape(chan_img), play_url, ch_name, chan['number']))
 
             # grab the EPG data for the channel
-            req_url = '%s?limit=6&channel=%s' % (TS_URL_EPG, chan['uuid'], )
+            req_url = '%s?limit=10&channel=%s' % (TS_URL_EPG, chan['uuid'], )
             #print('<!-- channel EPG URL %s -->' % (req_url, ))
             tvh_response = requests.get(req_url, auth=(TS_USER, TS_PASS))
             tvh_json = tvh_response.json()
@@ -281,7 +299,7 @@ def page_epg():
                         entry_num += 1
                 print('<div style="clear:both; font-size:1px;"></div></div></td>')
             else:
-                print('      &nbsp</td>')
+                print('      <td>&nbsp</td>')
             print('    </tr>')
         print('</table>')
 
