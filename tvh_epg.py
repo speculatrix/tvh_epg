@@ -200,7 +200,7 @@ def page_channels():
             chan = channel_dict[ch_name]
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
             print('''    <tr>
-      <td><img width="12%%" height="12%%" src="%s" /></td>
+      <td class="chan_icon"><img width="12%%" height="12%%" src="%s" /></td>
       <td><a href="%s" download="tvheadend.m3u">%s</a></td>
       <td>%s</td>
     </tr>''' % (url_escape(chan_img), play_url, ch_name, chan['number'], ))
@@ -236,7 +236,7 @@ def page_epg():
             chan_img = 'https://raw.githubusercontent.com/Elky666/TVLogos/master/%s.png' % (ch_name, )
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
             print('''    <tr>
-      <td width="100px" align="right"><img height="12%%" src="%s" /></td>
+      <td width="100px" align="right" class="chan_icon"><img height="12%%" src="%s" /></td>
       <td width="100px" align="right"><a href="%s" download="tvheadend.m3u">%s</a>
 <br />%d</td>''' % (url_escape(chan_img), play_url, ch_name, chan['number']))
 
@@ -456,13 +456,16 @@ def html_page_header():
         border-style: solid;
         float: left;
     }
-
     .epg_none
     {
         background-color: #808080;
         border: 1px #404040;
         border-style: solid;
         float: left;
+    }
+    .chan_icon
+    {
+        background-color: #e0e0e0;
     }
 
     pre {
