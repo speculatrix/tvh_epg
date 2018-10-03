@@ -28,8 +28,6 @@ grateful for any help I can get!
 ### TBD
 
 * create a proper now/next view timeline
-* start to use /var/lib/tvh_epg for settings and caches etc
-* implement user definable settings
 * save a cache of channel information
 * make display more attractive
 * add feature to hover mouse for more information
@@ -41,6 +39,7 @@ grateful for any help I can get!
 
 20181003
 * implemented a settings page
+* now instructst the user to create a directory for /var/lib/tvh_epg for settings and caches etc
 
 20181001
 * channel icons
