@@ -5,19 +5,16 @@ a really really basic EPG for TVHeadend
 
 import  cgi
 import  cgitb
+import  configparser
 import  datetime
 import  json
 import  os
+import  stat
 import  sys
 import  time
 
 import  collections
 import  requests
-
-from	tvh_epg_config	import TS_USER
-from	tvh_epg_config	import TS_PASS
-from	tvh_epg_config	import TS_URL
-from	tvh_epg_config	import DOCROOT_DEFAULT
 
 # pylint:disable=bad-whitespace
 # pylint:disable=too-many-branches
@@ -25,19 +22,20 @@ from	tvh_epg_config	import DOCROOT_DEFAULT
 # pylint:disable=too-many-nested-blocks
 # pylint:disable=too-many-statements
 
-################################################################################
+##########################################################################################
 
 
-TS_URL_CHN = TS_URL + 'api/channel/grid'
-TS_URL_CBE = TS_URL + 'api/dvr/entry/create_by_event'
-TS_URL_DCG = TS_URL + 'api/dvr/config/grid'
-TS_URL_EPG = TS_URL + 'api/epg/events/grid'
+TS_URL_CHN = 'api/channel/grid'
+TS_URL_CBE = 'api/dvr/entry/create_by_event'
+TS_URL_DCG = 'api/dvr/config/grid'
+TS_URL_EPG = 'api/epg/events/grid'
 
-TS_URL_STC = TS_URL + 'api/status/connections'
-TS_URL_STI = TS_URL + 'api/status/inputs'
-TS_URL_SVI = TS_URL + 'api/serverinfo'
+TS_URL_STC = 'api/status/connections'
+TS_URL_STI = 'api/status/inputs'
+TS_URL_SVI = 'api/serverinfo'
 
-TS_URL_STR = TS_URL + 'stream/channel'
+TS_URL_STR = 'stream/channel'
+
 
 CGI_PARAMS = cgi.FieldStorage()
 
@@ -48,20 +46,148 @@ SECS_P_PIXEL = 10           # how many seconds per pixel
 
 MAX_FUTURE = 9000   # 2.5 hours - how far into the future to show a prog
 
+INPUT_FORM_ESCAPE_TABLE = {
+    '"': "&quot;"       ,
+    "'": "&apos;"       ,
+}
+
 
 URL_ESCAPE_TABLE = {
     " ": "%20"          ,
 }
 
+# state files, queues, logs and so on are stored in this directory
+CONTROL_DIR       = '/var/lib/tvh_epg'
 
-#####################################################################################################################
+# the settings file is stored in the control directory
+SETTINGS_FILE     = 'tvh_epg_settings.ini'
+SETTINGS_SECTION  = 'user'
+
+
+TS_URL = 'ts_url'
+TS_USER = 'ts_user'
+TS_PASS = 'ts_pass'
+LOGODIR = 'logodir'
+TITLE = 'title'
+DFLT = 'default'
+# default values of the settings when being created
+SETTINGS_DEFAULTS = {   TS_URL  : { TITLE:  'URL of TV Headend Server',
+                                    DFLT:   'http://localhost:9981/'
+                                  },
+                        TS_USER : { TITLE:  'Username on TVH server',
+                                    DFLT:   'ts_user'
+                                  },
+                        TS_PASS : { TITLE:  'Password on TVH server',
+                                    DFLT:   'ts_pass'
+                                  },
+                        LOGODIR : { TITLE:  'TV Logo Path',
+                                    DFLT:   'TVLogos'
+                                  },
+                    }
+
+DOCROOT_DEFAULT = '/home/hts'
+
+
+##########################################################################################
+# Globals
+
+
+PATH_OF_SCRIPT = os.path.dirname(os.path.realpath(__file__))
+
+CONFIG_FILE_NAME = os.path.join(CONTROL_DIR, SETTINGS_FILE)
+MY_SETTINGS = configparser.ConfigParser()
+
+
+##########################################################################################
+def input_form_escape(text):
+    """escape special characters into html input forms"""
+    return "".join(INPUT_FORM_ESCAPE_TABLE.get(c, c) for c in text)
+
+
+
+##########################################################################################
 def url_escape(text):
     """escape special characters for URL"""
     return "".join(URL_ESCAPE_TABLE.get(c, c) for c in text)
 
 
+##########################################################################################
+def check_load_config_file():
+    '''check there's a config file which is writable;
+       returns 0 if OK, -1 if the rest of the page should be aborted,
+       > 0 to trigger rendering of the settings page'''
 
-################################################################################
+    global CONFIG_FILE_NAME
+    global MY_SETTINGS
+
+    # who am i?
+    my_euser_id = os.geteuid()
+    my_egroup_id = os.getegid()
+
+    config_bad = 1
+
+    ################################################
+    # verify that CONTROL_DIR exists and is writable
+    try:
+        qdir_stat = os.stat(CONTROL_DIR)
+    except OSError:
+        error_text = '''Error, directory "%s" doesn\'t appear to exist.
+Please do the following - needs root:
+\tsudo mkdir "%s" && sudo chgrp %s "%s" && sudo chmod g+ws "%s"''' \
+% (CONTROL_DIR, CONTROL_DIR, str(my_egroup_id), CONTROL_DIR, CONTROL_DIR)
+        config_bad = -1
+        return(config_bad, error_text)       # error so severe, no point in continuing
+
+    # owned by me and writable by me, or same group as me and writable through that group?
+    if ( (qdir_stat.st_uid == my_euser_id  and (qdir_stat.st_mode & stat.S_IWUSR) != 0)
+         or (qdir_stat.st_gid == my_egroup_id and (qdir_stat.st_mode & stat.S_IWGRP) != 0) ):
+        #print 'OK, %s exists and is writable' % CONTROL_DIR
+        config_bad = 0
+    else:
+        error_text = '''Error, won\'t be able to write to directory "%s".
+Please do the following:
+\tsudo chgrp %s "%s" && sudo chmod g+ws "%s"''' \
+% (CONTROL_DIR, str(my_egroup_id), CONTROL_DIR, CONTROL_DIR, )
+        return(-1, error_text)       # error so severe, no point in continuing
+
+    ########
+    # verify the settings file exists and is writable
+    if not os.path.isfile(CONFIG_FILE_NAME):
+        error_text = '''Error, can\'t open "%s" for reading.
+Please do the following - needs root:
+\tsudo touch "%s" && sudo chgrp %s "%s" && sudo chmod g+w "%s"''' \
+% (CONFIG_FILE_NAME, CONFIG_FILE_NAME, str(my_egroup_id), CONFIG_FILE_NAME, CONFIG_FILE_NAME)
+        return(-1, error_text)
+
+    # owned by me and writable by me, or same group as me and writable through that group?
+    config_stat = os.stat(CONFIG_FILE_NAME)
+    if ( ( config_stat.st_uid == my_euser_id  and (config_stat.st_mode & stat.S_IWUSR) != 0)
+         or ( config_stat.st_gid == my_egroup_id and (config_stat.st_mode & stat.S_IWGRP) != 0) ):
+        config_bad = 0
+    else:
+        error_text = '''Error, won\'t be able to write to file "%s"
+Please do the following - needs root:
+\tsudo chgrp %s "%s" && sudo chmod g+w %s''' \
+% (CONFIG_FILE_NAME, CONFIG_FILE_NAME, my_egroup_id, CONFIG_FILE_NAME, )
+        return(-1, error_text)
+
+
+    # file is zero bytes?
+    if config_stat.st_size == 0:
+        error_text = 'Config file is empty, please go to settings and submit to save\n'
+        return(1, error_text)
+
+
+    if not MY_SETTINGS.read(CONFIG_FILE_NAME):
+        error_text =('<b>Error</b>, failed to open and read config file "%s"' \
+                     % (CONFIG_FILE_NAME, ))
+        return(-1, error_text)
+
+
+    return(0, 'OK')
+
+
+##########################################################################################
 def secs_to_human(t_secs):
     '''turns a duration in seconds into Xd HH:MM:SS'''
 
@@ -86,7 +212,7 @@ def secs_to_human(t_secs):
     return h_time
 
 
-################################################################################
+##########################################################################################
 def epoch_to_human(epoch_time):
     '''takes numeric sec since unix epoch and returns humanly readable time'''
 
@@ -96,50 +222,60 @@ def epoch_to_human(epoch_time):
     return human_dt.strftime("%H:%M")
 
 
-################################################################################
-def load_channel_dict_from_cache():
-    '''load channel dict from cache file - FIXME'''
+##########################################################################################
+#def load_channel_dict_from_cache():
+#    '''load channel dict from cache file - FIXME'''
+#
 
+##########################################################################################
+#def save_channel_dict_to_cache():
+#    '''saves channel dict to cache file - FIXME'''
+#
 
-################################################################################
-def save_channel_dict_to_cache():
-    '''saves channel dict to cache file - FIXME'''
-
-
-################################################################################
+##########################################################################################
 def get_dvr_config_grid():
     '''gets the dvr/config/grid dict'''
 
-    tvh_url = '%s' % (TS_URL_DCG, )
-    tvh_response = requests.get(tvh_url, auth=(TS_USER, TS_PASS))
-    print('<!-- get_dvr_config_grid URL %s -->' % (tvh_url, ))
-    tvh_json = tvh_response.json()
+    global MY_SETTINGS
 
-    #print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, \
+    ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER  )
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS  )
+    ts_query = '%s%s' % (ts_url, TS_URL_DCG, )
+    ts_response = requests.get(ts_url, auth=(ts_user, ts_pass))
+    print('<!-- get_dvr_config_grid URL %s -->' % (ts_query, ))
+    ts_json = ts_response.json()
+
+    #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
     #                                   indent=4, separators=(',', ': ')) )
 
-    return tvh_json
+    return ts_json
 
-################################################################################
+##########################################################################################
 def get_channel_dict():
     '''gets the channel listing and generats an ordered dict by name'''
 
-    tvh_url = '%s?limit=400' % (TS_URL_CHN, )
-    tvh_response = requests.get(tvh_url, auth=(TS_USER, TS_PASS))
-    #print('<!-- get_channel_dict URL %s -->' % (tvh_url, ))
-    tvh_json = tvh_response.json()
-    #print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, \
+    global MY_SETTINGS
+
+    ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER  )
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS  )
+    ts_query = '%s%s?limit=400' % (ts_url, TS_URL_CHN, )
+    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    print('<!-- get_channel_dict URL %s -->' % (ts_query, ))
+    ts_json = ts_response.json()
+    #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
     #                                   indent=4, separators=(',', ': ')) )
 
     channel_map = {}    # full channel info
     channel_list = []   # build a list of channel names
     ordered_channel_map = collections.OrderedDict()
-    if 'entries' in tvh_json:
+    if 'entries' in ts_json:
 
         # grab all channel info
         name_unknown = 0
         number_unknown = -1
-        for entry in tvh_json['entries']:
+        for entry in ts_json['entries']:
             # start building a dict with channel name as key
             if 'name' in entry:
                 channel_name = entry['name']
@@ -173,9 +309,11 @@ def get_channel_dict():
     return ordered_channel_map
 
 
-################################################################################
+##########################################################################################
 def page_channels():
     '''prints the channel list to stdout'''
+
+    global MY_SETTINGS
 
     print('<h1>Channels</h1>')
 
@@ -190,26 +328,37 @@ def page_channels():
     if cdl:
         print('''  <table>
     <tr>
-      <th>Channel EPG</th>
+      <th>Channel Logo</th>
       <th>Channel Name</th>
       <th>Channel Number</th>
     </tr>
 ''')
         for ch_name in channel_dict:
-            chan_img = 'https://raw.githubusercontent.com/Elky666/TVLogos/master/%s.png' % (ch_name, )
+            print('    <tr>')
+            chan_img = '%s.png' % (ch_name, )
+            logodir = MY_SETTINGS.get(SETTINGS_SECTION, LOGODIR)
+            chan_img_file = os.path.join(DOCROOT, logodir, chan_img, )
+            chan_img_url = url_escape('/%s/%s' % (logodir, chan_img, ))
+            if os.path.isfile(chan_img_file):
+                print('<td class="chan_icon"><img width="12%%" height="12%%" '
+                      'src="%s" /></td>' % (chan_img_url,))
+            else:
+                print('<td>&nbsp;</td>')
+
             chan = channel_dict[ch_name]
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
-            print('''    <tr>
-      <td class="chan_icon"><img width="12%%" height="12%%" src="%s" /></td>
-      <td><a href="%s" download="tvheadend.m3u">%s</a></td>
+            print('''<td><a href="%s" download="tvheadend.m3u">%s</a></td>
       <td>%s</td>
-    </tr>''' % (url_escape(chan_img), play_url, ch_name, chan['number'], ))
+    </tr>''' % (play_url, ch_name, chan['number'], ))
 
         print('</table>')
 
-################################################################################
+
+##########################################################################################
 def page_epg():
     '''prints the EPG to stdout'''
+
+    global MY_SETTINGS
 
     print('<h1>EPG</h1>')
 
@@ -230,28 +379,42 @@ def page_epg():
       <th width="1500px" align="left"><b>It's now %s</b></th>
     </tr>
 ''' % (epoch_to_human(epoch_time), ) )
+
+        ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+        ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER  )
+        ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS  )
+
         # iterate through the channel list by name
         for ch_name in channel_dict:
+            print('    <tr>')
+            logodir = MY_SETTINGS.get(SETTINGS_SECTION, LOGODIR)
+            chan_img = '%s.png' % (ch_name, )
+            chan_img_file = os.path.join(DOCROOT, logodir, chan_img, )
+            chan_img_url = url_escape('/%s/%s' % (logodir, chan_img, ))
+            if os.path.isfile(chan_img_file):
+                print('<td width="100px" align="right" class="chan_icon">'
+                      '<img height="12%%" src="%s" /></td>' % (chan_img_url,))
+            else:
+                print('<td>&nbsp;</td>')
+
             chan = channel_dict[ch_name]
-            chan_img = 'https://raw.githubusercontent.com/Elky666/TVLogos/master/%s.png' % (ch_name, )
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
-            print('''    <tr>
-      <td width="100px" align="right" class="chan_icon"><img height="12%%" src="%s" /></td>
-      <td width="100px" align="right"><a href="%s" download="tvheadend.m3u">%s</a>
-<br />%d</td>''' % (url_escape(chan_img), play_url, ch_name, chan['number']))
+            print('      <td width="100px" align="right"><a href="%s" '
+                  'download="tvheadend.m3u">%s</a> <br />%d</td>' \
+                  % (play_url, ch_name, chan['number']))
 
             # grab the EPG data for the channel
-            req_url = '%s?limit=10&channel=%s' % (TS_URL_EPG, chan['uuid'], )
-            #print('<!-- channel EPG URL %s -->' % (req_url, ))
-            tvh_response = requests.get(req_url, auth=(TS_USER, TS_PASS))
-            tvh_json = tvh_response.json()
+            ts_query = '%s%s?limit=10&channel=%s' % (ts_url, TS_URL_EPG, chan['uuid'], )
+            print('<!-- channel EPG URL %s -->' % (ts_query, ))
+            ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+            ts_json = ts_response.json()
 
-            if len(tvh_json['entries']):
-                #chan[EPG] = tvh_json['entries']
+            if len(ts_json['entries']):
+                #chan[EPG] = ts_json['entries']
                 print('       <td valign="top" nowrap width="1600px"><div class="epg_row">')
 
                 entry_num = 0
-                for entry in tvh_json['entries']:
+                for entry in ts_json['entries']:
                     time_start = int(entry['start'])
                     time_stop = int(entry['stop'])
 
@@ -305,11 +468,15 @@ def page_epg():
 
 
 ################################################################################
-def page_error():
-    '''prints an error'''
+def page_error(error_text):
+    '''prints error page contents'''
+
+    global MY_SETTINGS
 
     print('<h1>Error</h1>')
     print('<p>Something went wrong</p>')
+    print('<pre>%s</pre>' % (error_text, ))
+    print('<pre>settings sections: %s</pre>' % (MY_SETTINGS.sections(), ))
 
 
 ################################################################################
@@ -323,6 +490,8 @@ def page_m3u(p_uuid):
 ################################################################################
 def page_record(p_event_id, p_profile):
     '''checks the recording param and generated DVR record'''
+
+    global MY_SETTINGS
 
     print('<h1>Record Item</h1>')
 
@@ -346,31 +515,107 @@ def page_record(p_event_id, p_profile):
         print('Generating DVR record...')
         print('<p>Work In Progress</p>')
 
-        tvh_url = '%s?config_uuid=%s&event_id=%s' % (TS_URL_CBE, p_profile, p_event_id,)
-        tvh_response = requests.get(tvh_url, auth=(TS_USER, TS_PASS))
-        print('<!-- page_record CBE URL %s -->' % (tvh_url, ))
-        tvh_json = tvh_response.json()
+        ts_url = '%s?config_uuid=%s&event_id=%s' % (TS_URL_CBE, p_profile, p_event_id,)
+        ts_response = requests.get(ts_url, auth=(TS_USER, TS_PASS))
+        print('<!-- page_record CBE URL %s -->' % (ts_url, ))
+        ts_json = ts_response.json()
 
-        #print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, \
+        #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
         #                                   indent=4, separators=(',', ': ')) )
 
-        if 'uuid' in tvh_json:
+        if 'uuid' in ts_json:
             print('<p><b>Success</b></p>')
         else:
             print('<p><b>Failed</b></p>')
 
 
-################################################################################
+#########################################################################################
 def page_serverinfo():
     '''prints the server information, useful to check the API call is working at all'''
 
+    global MY_SETTINGS
+
     print('<h1>Server Info</h1>')
 
-    tvh_response = requests.get(TS_URL_SVI, auth=(TS_USER, TS_PASS))
-    tvh_json = tvh_response.json()
+    ts_response = requests.get(TS_URL_SVI, auth=(TS_USER, TS_PASS))
+    ts_json = ts_response.json()
     #print('<!-- serverinfo URL %s -->' % (TS_URL_SVI, ))
 
-    print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True, indent=4, separators=(',', ': ')) )
+    print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, indent=4, separators=(',', ': ')) )
+
+
+##########################################################################################
+def page_settings():
+    '''the configuration page'''
+
+    global CONFIG_FILE_NAME
+    global MY_SETTINGS
+
+    # the check load config function doesn't populate an empty file
+    if SETTINGS_SECTION not in MY_SETTINGS.sections():
+        print('section %s doesn\'t exit' % SETTINGS_SECTION)
+        MY_SETTINGS.add_section(SETTINGS_SECTION)
+
+    # attempt to find the value of each setting, either from the params
+    # submitted by the browser, or from the file, or from the defaults
+    for setting in sorted(SETTINGS_DEFAULTS):
+        setting_value = ''
+
+        # get the value if possible from the URL/form
+        cgi_param_name = 'c_' + setting
+        if cgi_param_name in CGI_PARAMS:
+            setting_value = CGI_PARAMS.getvalue(cgi_param_name)
+        else:
+            # otherwise get it from the config file
+            try:
+                setting_value = MY_SETTINGS.get(SETTINGS_SECTION, setting)
+            except configparser.NoOptionError:
+            #except configparser.NoOptionError as noex:
+                #print('<p>Exception "%s"<br />' % (noex, ))
+                #print('failed getting value for setting "%s" from config, '
+                #      'using default</p>' % (SETTINGS_DEFAULTS[setting][TITLE], ))
+                if DFLT in SETTINGS_DEFAULTS[setting]:
+                    setting_value = SETTINGS_DEFAULTS[setting][DFLT]
+                else:
+                    setting_value = ''
+
+        MY_SETTINGS.set(SETTINGS_SECTION, setting, setting_value)
+
+
+    print('<form method="get" action="">'                           \
+          '<input type="hidden" name="page" value="settings" />'    \
+          '<table>'                                                 \
+          '  <tr>'                                                  \
+          '    <th align="right">Key</th>'                          \
+          '    <th align="right">Setting</th>'                      \
+          '    <th>Value</th>'                                      \
+          '    <th>Default</th>\n'                                  \
+          '  </tr>')
+
+    for setting in sorted(SETTINGS_DEFAULTS):
+        print('    <tr>')
+        print('      <td align="right">%s&nbsp;&nbsp;</td>' % (setting, ))
+        print('      <td align="right">%s&nbsp;&nbsp;</td>' % (SETTINGS_DEFAULTS[setting][TITLE], ))
+        print('      <td width="50%%"><input type="text" name="c_%s" '
+              'value="%s" style="display:table-cell; width:100%%" /></td>' \
+              % (setting, MY_SETTINGS.get(SETTINGS_SECTION, setting), ))
+        print('      <td>&nbsp;%s</td>' % (SETTINGS_DEFAULTS[setting][DFLT], ))
+        print('    </tr>')
+
+    print('''    <tr>
+      <td align="center"><input type="reset" value="revert"></td>
+      <td align="center"><input type="submit" name="submit" value="submit" /></td>
+      <td></td>
+    </tr>
+  </table>
+  </form>''')
+
+    config_file_handle = open(CONFIG_FILE_NAME, 'w')
+    if config_file_handle:
+        MY_SETTINGS.write(config_file_handle)
+    else:
+        print('<b>Error</b>, failed to open and write config file "%s"' % (CONFIG_FILE_NAME, ))
+
 
 
 ################################################################################
@@ -380,26 +625,26 @@ def page_status():
     print('<h1>Server Status</h1>')
 
     print('<h2>Input Status</h2>')
-    tvh_response = requests.get(TS_URL_STI, auth=(TS_USER, TS_PASS))
+    ts_response = requests.get(TS_URL_STI, auth=(TS_USER, TS_PASS))
     #print('<!-- status inputs URL %s -->' % (TS_URL_STI, ))
-    if tvh_response.status_code == 200:
-        tvh_json = tvh_response.json()
-        print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True,
+    if ts_response.status_code == 200:
+        ts_json = ts_response.json()
+        print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True,
                                            indent=4, separators=(',', ': ')) )
     else:
         print('<p>HTTP error response %d'
-              '- does configured user have admin rights?</p>' % (tvh_response.status_code, ) )
+              '- does configured user have admin rights?</p>' % (ts_response.status_code, ) )
 
     print('<h2>Connection Status</h2>')
-    tvh_response = requests.get(TS_URL_STC, auth=(TS_USER, TS_PASS))
+    ts_response = requests.get(TS_URL_STC, auth=(TS_USER, TS_PASS))
     #print('<!-- status connections URL %s -->' % (TS_URL_STC, ))
-    if tvh_response.status_code == 200:
-        tvh_json = tvh_response.json()
-        print('<pre>%s</pre>' % json.dumps(tvh_json, sort_keys=True,
+    if ts_response.status_code == 200:
+        ts_json = ts_response.json()
+        print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True,
                                            indent=4, separators=(',', ': ')) )
     else:
         print('<p>HTTP error response %d'
-              '- does configured user have admin rights?</p>' % (tvh_response.status_code, ) )
+              '- does configured user have admin rights?</p>' % (ts_response.status_code, ) )
 
 
 ################################################################################
@@ -489,6 +734,7 @@ def html_page_header():
 <b>Menu:</b>&nbsp;<a href="?page=epg">EPG</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=channels">Channels</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=serverinfo">Server Info</a>&nbsp;&nbsp;&nbsp;
+<a href="?page=settings">Settings</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=status">Status</a>&nbsp;&nbsp;&nbsp;
 ''')
 
@@ -516,7 +762,13 @@ def web_interface():
 
 
     #illegal_param_count = 0
-    if 'page' in CGI_PARAMS:
+    error_text = 'Unknown error'
+    (config_bad, error_text) = check_load_config_file()
+    if config_bad < 0:
+        p_page = 'error'
+    #elif config_bad > 0:
+    #    p_page = 'settings'
+    elif 'page' in CGI_PARAMS:
         p_page = CGI_PARAMS.getvalue('page')
     else:
         p_page = ''
@@ -528,7 +780,7 @@ def web_interface():
         html_page_footer()
     elif p_page == 'error':
         html_page_header()
-        page_error()
+        page_error(error_text)
         html_page_footer()
     elif p_page == 'channels':
         html_page_header()
@@ -541,7 +793,7 @@ def web_interface():
             page_m3u(p_uuid)
         else:
             html_page_header()
-            page_error()
+            page_error('missing uuid for m3u generator')
             html_page_footer()
     elif p_page == 'record':
         html_page_header()
@@ -555,16 +807,20 @@ def web_interface():
         html_page_header()
         page_status()
         html_page_footer()
+    elif p_page == 'settings':
+        html_page_header()
+        page_settings()
+        html_page_footer()
     else:
         html_page_header()
         page_record(p_event_id, p_profile)
-        #page_error()
+        #page_error('no page selected')
         html_page_footer()
         #illegal_param_count += 1
 
 
 
-################################################################################
+##########################################################################################
 # main
 
 if len(sys.argv) <= 1:

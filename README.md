@@ -19,6 +19,9 @@ grateful for any help I can get!
 * put the config file into /usr/lib/cgi-bin/tvh_epg_config/
 * edit the config with your server details
 
+* if you want channel icons, put them into a directory called TVLogos under the document root
+** You can get FreeSat icons from https://github.com/Elky666/TVLogos
+
 
 ## roadmap
 
@@ -35,6 +38,12 @@ grateful for any help I can get!
 
 
 ### Done - in reverse order
+
+20181003
+* implemented a settings page
+
+20181001
+* channel icons
 
 20180927
 * recording function works, but it's ugly
