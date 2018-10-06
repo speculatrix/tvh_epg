@@ -30,6 +30,7 @@ import  requests
 
 
 TS_URL_CHN = 'api/channel/grid'
+TS_URL_CTG = 'api/channeltag/grid'
 TS_URL_CBE = 'api/dvr/entry/create_by_event'
 TS_URL_DCG = 'api/dvr/config/grid'
 TS_URL_EPG = 'api/epg/events/grid'
@@ -71,6 +72,7 @@ SETTINGS_SECTION  = 'user'
 TS_URL = 'ts_url'
 TS_USER = 'ts_user'
 TS_PASS = 'ts_pass'
+SH_LOGO = 'sh_ch_logo'
 LOGODIR = 'logodir'
 TITLE = 'title'
 DFLT = 'default'
@@ -83,6 +85,9 @@ SETTINGS_DEFAULTS = {   TS_URL  : { TITLE:  'URL of TV Headend Server',
                                   },
                         TS_PASS : { TITLE:  'Password on TVH server',
                                     DFLT:   'ts_pass'
+                                  },
+                        SH_LOGO : { TITLE:  'Show Channel Logos',
+                                    DFLT:   '0'
                                   },
                         #LOGODIR : { TITLE:  'TV Logo Path',
                         #            DFLT:   'TVLogos'
@@ -228,6 +233,25 @@ def epoch_to_human(epoch_time):
 #
 
 ##########################################################################################
+def get_channeltag_grid():
+    '''gets the channeltag/grid values'''
+
+    global MY_SETTINGS
+
+    ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
+    ts_query = '%s%s' % (ts_url, TS_URL_CTG, )
+    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    print('<!-- get_dvr_config_grid URL %s -->' % (ts_query, ))
+    ts_json = ts_response.json()
+
+    #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
+    #                                   indent=4, separators=(',', ': ')) )
+
+    return ts_json
+
+##########################################################################################
 def get_dvr_config_grid():
     '''gets the dvr/config/grid dict'''
 
@@ -315,30 +339,40 @@ def page_channels():
     print('<h1>Channels</h1>')
 
     channel_dict = get_channel_dict()
-    #print('<pre>%s</pre>' % json.dumps(channel_dict, sort_keys=True,
-    #                                   indent=4, separators=(',', ': ')) )
+    channel_tag = get_channeltag_grid()
+
     cdl = len(channel_dict)
     print('''<p><b>Channel count: %d</b></p>
 <p>Note, the links are the streams, open in VLC
 - you can drag and drop the link into a VLC window</p>''' % (cdl, ))
 
     if cdl:
+        print('  <form method="get" action="?page=channels">')
+        print("<b>Tag filters</b>:")
+        for tag in channel_tag['entries']:
+            print('<input type="checkbox" name="tag" value="%s" />%s&nbsp;&nbsp;' % (tag['uuid'], tag['name'], ))
+        print('''    <input type="hidden" name="page" value="channels" />
+    <input type="submit" name="apply" value="apply" />
+  </form>''')
+
         print('''  <table>
-    <tr>
-      <th>Channel Logo</th>
-      <th>Channel Name</th>
+    <tr>''')
+        if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
+            print('      <th>Channel Logo</th>')
+        print('''       <th>Channel Name</th>
       <th>Channel Number</th>
     </tr>
 ''')
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
         for ch_name in channel_dict:
             print('    <tr>')
-            if 'icon_public_url' in channel_dict[ch_name]:
-                chan_img_url = '%s%s' % (ts_url, channel_dict[ch_name]['icon_public_url'], )
-                print('<td class="chan_icon"><img width="12%%" height="12%%" '
-                      'src="%s" /></td>' % (chan_img_url,))
-            else:
-                print('<td>X&nbsp;</td>')
+            if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
+                if 'icon_public_url' in channel_dict[ch_name]:
+                    chan_img_url = '%s%s' % (ts_url, channel_dict[ch_name]['icon_public_url'], )
+                    print('<td class="chan_icon"><img width="12%%" height="12%%" '
+                          'src="%s" /></td>' % (chan_img_url,))
+                else:
+                    print('<td>X&nbsp;</td>')
 
             chan = channel_dict[ch_name]
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
@@ -368,12 +402,13 @@ def page_epg():
 
         # get the EPG data for each channel
         print('''  <table width="1700px">
-    <tr>
-      <th width="100px">Channel Icon</th>
-      <th width="100px">Channel Name</th>
-      <th width="1500px" align="left"><b>It's now %s</b></th>
+    <tr>''')
+        if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
+            print('      <th width="100px">Channel Logo</th>')
+        print('''       <th>Channel Name</th>
+      <th>Channel Number</th>
     </tr>
-''' % (epoch_to_human(epoch_time), ) )
+''')
 
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
         ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
@@ -383,12 +418,13 @@ def page_epg():
         for ch_name in channel_dict:
             print('    <tr>')
             #logodir = MY_SETTINGS.get(SETTINGS_SECTION, LOGODIR)
-            if 'icon_public_url' in channel_dict[ch_name]:
-                chan_img_url = '%s%s' % (ts_url, channel_dict[ch_name]['icon_public_url'], )
-                print('<td width="100px" align="right" class="chan_icon">'
-                      '<img height="12%%" src="%s" /></td>' % (chan_img_url,))
-            else:
-                print('<td>&nbsp;</td>')
+            if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
+                if 'icon_public_url' in channel_dict[ch_name]:
+                    chan_img_url = '%s%s' % (ts_url, channel_dict[ch_name]['icon_public_url'], )
+                    print('<td width="100px" align="right" class="chan_icon">'
+                          '<img height="12%%" src="%s" /></td>' % (chan_img_url,))
+                else:
+                    print('<td>&nbsp;</td>')
 
             chan = channel_dict[ch_name]
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
@@ -631,11 +667,17 @@ def page_settings():
 def page_status():
     '''prints the status information, useful to check the API call is working at all'''
 
+    global MY_SETTINGS
+
     print('<h1>Server Status</h1>')
 
     print('<h2>Input Status</h2>')
-    ts_response = requests.get(TS_URL_STI, auth=(TS_USER, TS_PASS))
-    #print('<!-- status inputs URL %s -->' % (TS_URL_STI, ))
+    ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
+    ts_query = '%s%s' % (ts_url, TS_URL_STI,)
+    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    print('<!-- status inputs URL %s -->' % (TS_URL_STI, ))
     if ts_response.status_code == 200:
         ts_json = ts_response.json()
         print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True,
@@ -645,7 +687,8 @@ def page_status():
               '- does configured user have admin rights?</p>' % (ts_response.status_code, ) )
 
     print('<h2>Connection Status</h2>')
-    ts_response = requests.get(TS_URL_STC, auth=(TS_USER, TS_PASS))
+    ts_query = '%s%s' % (ts_url, TS_URL_STC,)
+    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     #print('<!-- status connections URL %s -->' % (TS_URL_STC, ))
     if ts_response.status_code == 200:
         ts_json = ts_response.json()

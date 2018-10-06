@@ -36,6 +36,8 @@ grateful for any help I can get!
 ### Done - in reverse order
 
 20181006
+* started function to filter on tags
+* added ability to turn channel icons off and on
 * add a hover feature to show more information about a program
 * uses TVH server's own channel images; not sure if this is better
 
