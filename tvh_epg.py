@@ -500,19 +500,24 @@ def page_record(p_event_id, p_profile):
         dcg_json = get_dvr_config_grid()
 
         if 'entries' in dcg_json:
-            print('<form method="get">')
-            print('<input type="hidden" name="page" value="record" />')
-            print('<select name="profile">')
-            for entry in dcg_json['entries']:
-                print('<option value=%s>profile: %s</p>' % (entry['uuid'], entry['profile'], ))
-            print('</select>')
-            print('<input type="hidden" name="event_id" value="%s" />' % (p_event_id, ))
-            print('<input type="submit" name="Go" value="Go" />')
-            print('</form method="get">')
+            # if multiple profiles, ask the user
+            if len(dcg_json['entries']) > 1:
+                print('<form method="get">')
+                print('<input type="hidden" name="page" value="record" />')
+                print('<select name="profile">')
+                for entry in dcg_json['entries']:
+                    print('<option value=%s>profile: %s</p>' % (entry['uuid'], entry['profile'], ))
+                print('</select>')
+                print('<input type="hidden" name="event_id" value="%s" />' % (p_event_id, ))
+                print('<input type="submit" name="Go" value="Go" />')
+                print('</form method="get">')
+            # if only one profile, just select it
+            else:
+                p_profile = dcg_json['entries'][0]['profile']
         else:
             print('<p><b>Error<b>, there were no DCG profiles</p>')
 
-    else:
+    if p_profile != '':
         print('Generating DVR record...')
         print('<p>Work In Progress</p>')
 
