@@ -16,11 +16,15 @@ import  time
 import  collections
 import  requests
 
+# requires making code less readable:
 # pylint:disable=bad-whitespace
 # pylint:disable=too-many-branches
 # pylint:disable=too-many-locals
 # pylint:disable=too-many-nested-blocks
 # pylint:disable=too-many-statements
+
+# broken in pylint3:
+# pylint:disable=global-variable-not-assigned
 
 ##########################################################################################
 
@@ -72,7 +76,7 @@ TITLE = 'title'
 DFLT = 'default'
 # default values of the settings when being created
 SETTINGS_DEFAULTS = {   TS_URL  : { TITLE:  'URL of TV Headend Server',
-                                    DFLT:   'http://localhost:9981/'
+                                    DFLT:   'http://tvh.example.com:9981/'
                                   },
                         TS_USER : { TITLE:  'Username on TVH server',
                                     DFLT:   'ts_user'
@@ -80,22 +84,13 @@ SETTINGS_DEFAULTS = {   TS_URL  : { TITLE:  'URL of TV Headend Server',
                         TS_PASS : { TITLE:  'Password on TVH server',
                                     DFLT:   'ts_pass'
                                   },
-                        LOGODIR : { TITLE:  'TV Logo Path',
-                                    DFLT:   'TVLogos'
-                                  },
+                        #LOGODIR : { TITLE:  'TV Logo Path',
+                        #            DFLT:   'TVLogos'
+                        #          },
                     }
 
 DOCROOT_DEFAULT = '/home/hts'
 
-
-##########################################################################################
-# Globals
-
-
-PATH_OF_SCRIPT = os.path.dirname(os.path.realpath(__file__))
-
-CONFIG_FILE_NAME = os.path.join(CONTROL_DIR, SETTINGS_FILE)
-MY_SETTINGS = configparser.ConfigParser()
 
 
 ##########################################################################################
@@ -129,7 +124,7 @@ def check_load_config_file():
     ################################################
     # verify that CONTROL_DIR exists and is writable
     try:
-        qdir_stat = os.stat(CONTROL_DIR)
+        cdir_stat = os.stat(CONTROL_DIR)
     except OSError:
         error_text = '''Error, directory "%s" doesn\'t appear to exist.
 Please do the following - needs root:
@@ -139,8 +134,8 @@ Please do the following - needs root:
         return(config_bad, error_text)       # error so severe, no point in continuing
 
     # owned by me and writable by me, or same group as me and writable through that group?
-    if ( (qdir_stat.st_uid == my_euser_id  and (qdir_stat.st_mode & stat.S_IWUSR) != 0)
-         or (qdir_stat.st_gid == my_egroup_id and (qdir_stat.st_mode & stat.S_IWGRP) != 0) ):
+    if ( (cdir_stat.st_uid == my_euser_id  and (cdir_stat.st_mode & stat.S_IWUSR) != 0)
+         or (cdir_stat.st_gid == my_egroup_id and (cdir_stat.st_mode & stat.S_IWGRP) != 0) ):
         #print 'OK, %s exists and is writable' % CONTROL_DIR
         config_bad = 0
     else:
@@ -239,10 +234,10 @@ def get_dvr_config_grid():
     global MY_SETTINGS
 
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER  )
-    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS  )
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
     ts_query = '%s%s' % (ts_url, TS_URL_DCG, )
-    ts_response = requests.get(ts_url, auth=(ts_user, ts_pass))
+    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     print('<!-- get_dvr_config_grid URL %s -->' % (ts_query, ))
     ts_json = ts_response.json()
 
@@ -258,8 +253,8 @@ def get_channel_dict():
     global MY_SETTINGS
 
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER  )
-    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS  )
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
     ts_query = '%s%s?limit=400' % (ts_url, TS_URL_CHN, )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     print('<!-- get_channel_dict URL %s -->' % (ts_query, ))
@@ -297,6 +292,8 @@ def get_channel_dict():
                 name_unknown -= 1
 
             ch_map['uuid'] = entry['uuid']
+            if 'icon_public_url' in entry:
+                ch_map['icon_public_url'] = entry['icon_public_url']
 
         channel_list_sorted = sorted(channel_list, key=lambda s: s.casefold())
 
@@ -333,17 +330,15 @@ def page_channels():
       <th>Channel Number</th>
     </tr>
 ''')
+        ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
         for ch_name in channel_dict:
             print('    <tr>')
-            chan_img = '%s.png' % (ch_name, )
-            logodir = MY_SETTINGS.get(SETTINGS_SECTION, LOGODIR)
-            chan_img_file = os.path.join(DOCROOT, logodir, chan_img, )
-            chan_img_url = url_escape('/%s/%s' % (logodir, chan_img, ))
-            if os.path.isfile(chan_img_file):
+            if 'icon_public_url' in channel_dict[ch_name]:
+                chan_img_url = '%s%s' % (ts_url, channel_dict[ch_name]['icon_public_url'], )
                 print('<td class="chan_icon"><img width="12%%" height="12%%" '
                       'src="%s" /></td>' % (chan_img_url,))
             else:
-                print('<td>&nbsp;</td>')
+                print('<td>X&nbsp;</td>')
 
             chan = channel_dict[ch_name]
             play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
@@ -381,17 +376,15 @@ def page_epg():
 ''' % (epoch_to_human(epoch_time), ) )
 
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-        ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER  )
-        ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS  )
+        ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
+        ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
 
         # iterate through the channel list by name
         for ch_name in channel_dict:
             print('    <tr>')
-            logodir = MY_SETTINGS.get(SETTINGS_SECTION, LOGODIR)
-            chan_img = '%s.png' % (ch_name, )
-            chan_img_file = os.path.join(DOCROOT, logodir, chan_img, )
-            chan_img_url = url_escape('/%s/%s' % (logodir, chan_img, ))
-            if os.path.isfile(chan_img_file):
+            #logodir = MY_SETTINGS.get(SETTINGS_SECTION, LOGODIR)
+            if 'icon_public_url' in channel_dict[ch_name]:
+                chan_img_url = '%s%s' % (ts_url, channel_dict[ch_name]['icon_public_url'], )
                 print('<td width="100px" align="right" class="chan_icon">'
                       '<img height="12%%" src="%s" /></td>' % (chan_img_url,))
             else:
@@ -420,10 +413,28 @@ def page_epg():
 
                     # don't show far future, stop screen being too wide
                     if time_start - epoch_time < MAX_FUTURE:
+                        if 'title' in entry:
+                            try:
+                                # FIXME! this stops the unicode error seen on channel BBC R n Gael
+                                # 'ascii' codec can't encode character '\xe8'
+                                # in position 4: ordinal not in range(128)
+                                title = bytes.decode(entry['title'].encode("ascii", "ignore"))
+                            except UnicodeEncodeError as uc_ex:
+                                title = '%s - %s' % (type(uc_ex).__name__, str(uc_ex), )
+                        else:
+                            title = '</i>Untitled</i>'
+
+                        if 'summary' in entry:
+                            # FIXME! this removes unicodeness from summary
+                            summary = bytes.decode(entry['summary'].encode("ascii", "ignore"))
+                        else:
+                            summary = ''
+
                         duration = time_stop - time_start
                         time_left = duration
                         box_width = duration / SECS_P_PIXEL
 
+                        # print the boxes containing each program
                         time_offset = time_start - epoch_time
                         if time_offset < 0:
                             time_left = time_stop - epoch_time
@@ -438,27 +449,17 @@ def page_epg():
                         else:
                             print('<div class="epg_next" style="width: '
                                   '%dpx; max-width: %dpx">' % (box_width, box_width,) )
-                        if 'title' in entry:
-                            try:
-                                # FIXME! this stops the unicode error seen on channel BBC R n Gael
-                                # 'ascii' codec can't encode character '\xe8'
-                                # in position 4: ordinal not in range(128)
-                                print('<b>%s</b><br /><a href="?page=record&event_id=%s">'
-                                      '&reg;</a>&nbsp;&nbsp;'
-                                      #% (entry['title'],
-                                      % (bytes.decode(entry['title'].encode("ascii", "ignore")),
-                                         entry['eventId'], ))
-                            except UnicodeEncodeError as uc_ex:
-                                print('%s - %s' % (type(uc_ex).__name__, str(uc_ex), ))
-                        else:
-                            print('<i>untitled</i><br />') # empty table cell
+                        print('<a href="?page=record&event_id=%s">'
+                              '&reg;</a>&nbsp;<b>%s</b><br />' % (entry['eventId'], title, ))
+                        print('<div class="tooltip"><span class="tooltiptext">'
+                              '%s</span>' % (summary, ))
                         if time_offset > 0:
                             print('start %s<br />duration %s'            \
                                   % (epoch_to_human(time_start), secs_to_human(duration), ))
                         else:
                             print('%s left of %s'
                                   % (secs_to_human(time_left), secs_to_human(duration), ))
-                        print('      </div>')
+                        print('      </div></div>')
                         entry_num += 1
                 print('<div style="clear:both; font-size:1px;"></div></div></td>')
             else:
@@ -515,8 +516,11 @@ def page_record(p_event_id, p_profile):
         print('Generating DVR record...')
         print('<p>Work In Progress</p>')
 
-        ts_url = '%s?config_uuid=%s&event_id=%s' % (TS_URL_CBE, p_profile, p_event_id,)
-        ts_response = requests.get(ts_url, auth=(TS_USER, TS_PASS))
+        ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+        ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
+        ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
+        ts_query = '%s%s?config_uuid=%s&event_id=%s' % (ts_url, TS_URL_CBE, p_profile, p_event_id,)
+        ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
         print('<!-- page_record CBE URL %s -->' % (ts_url, ))
         ts_json = ts_response.json()
 
@@ -568,7 +572,7 @@ def page_settings():
         else:
             # otherwise get it from the config file
             try:
-                setting_value = MY_SETTINGS.get(SETTINGS_SECTION, setting)
+                setting_value = str(MY_SETTINGS.get(SETTINGS_SECTION, setting))
             except configparser.NoOptionError:
             #except configparser.NoOptionError as noex:
                 #print('<p>Exception "%s"<br />' % (noex, ))
@@ -712,6 +716,33 @@ def html_page_header():
     {
         background-color: #e0e0e0;
     }
+    /* https://www.w3schools.com/css/css_tooltip.asp */
+    /* Tooltip container */
+    .tooltip {
+        position: relative;
+        display: inline-block;
+    }
+
+    /* Tooltip text */
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 200px;
+        background-color: #888;
+        color: #fff;
+        text-align: center;
+        padding: 5px 0;
+        border-radius: 6px;
+     
+        /* Position the tooltip text */
+        position: absolute;
+        z-index: 1;
+    }
+
+    /* Show the tooltip text when you mouse over the tooltip container */
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+    }
+
 
     pre {
       white-space: pre-wrap;       /* Since CSS 2.1 */
@@ -750,6 +781,9 @@ def html_page_footer():
 def web_interface():
     '''provides web interface'''
 
+    global CONFIG_FILE_NAME
+    global MY_SETTINGS
+
     if 'event_id' in CGI_PARAMS:
         p_event_id = CGI_PARAMS.getvalue('event_id')
     else:
@@ -773,6 +807,7 @@ def web_interface():
     else:
         p_page = ''
         #p_page = 'error'
+        p_page = EPG
 
     if p_page == EPG:
         html_page_header()
@@ -822,6 +857,11 @@ def web_interface():
 
 ##########################################################################################
 # main
+
+# a few globals
+#PATH_OF_SCRIPT = os.path.dirname(os.path.realpath(__file__))
+CONFIG_FILE_NAME = os.path.join(CONTROL_DIR, SETTINGS_FILE)
+MY_SETTINGS = configparser.ConfigParser()
 
 if len(sys.argv) <= 1:
     DOCROOT = os.environ.get('DOCUMENT_ROOT', DOCROOT_DEFAULT)

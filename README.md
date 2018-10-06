@@ -30,12 +30,14 @@ grateful for any help I can get!
 * create a proper now/next view timeline
 * save a cache of channel information
 * make display more attractive
-* add feature to hover mouse for more information
-* get the channel icons
 * add a filter feature, to exclude or only include channels
 
 
 ### Done - in reverse order
+
+20181006
+* add a hover feature to show more information about a program
+* uses TVH server's own channel images; not sure if this is better
 
 20181003
 * implemented a settings page
