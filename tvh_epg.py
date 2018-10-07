@@ -485,7 +485,7 @@ def page_epg():
                         else:
                             print('<div class="epg_next" style="width: '
                                   '%dpx; max-width: %dpx">' % (box_width, box_width,) )
-                        print('<a href="?page=record&event_id=%s">'
+                        print('<a href="?page=record&event_id=%s" target="tvh_epg_record" width="320" height="320">'
                               '&reg;</a>&nbsp;<b>%s</b><br />' % (entry['eventId'], title, ))
                         print('<div class="tooltip"><span class="tooltiptext">'
                               '%s</span>' % (summary, ))
@@ -546,6 +546,7 @@ def page_record(p_event_id, p_profile):
                 print('</select>')
                 print('<input type="hidden" name="event_id" value="%s" />' % (p_event_id, ))
                 print('<input type="submit" name="Go" value="Go" />')
+                print('<input type="submit" name="Cancel" value="Cancel" onclick="self.close()" />')
                 print('</form method="get">')
             # if only one profile, just select it
             else:
@@ -572,6 +573,9 @@ def page_record(p_event_id, p_profile):
             print('<p><b>Success</b></p>')
         else:
             print('<p><b>Failed</b></p>')
+        print('<input type="hidden" name="page" value="record" />')
+        print('<input type="submit" name="Close" value="Close" onclick="self.close()" />')
+        print('</form method="get">')
 
 
 #########################################################################################
