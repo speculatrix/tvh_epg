@@ -251,24 +251,6 @@ def get_channeltag_grid():
 
     return ts_json
 
-##########################################################################################
-def get_dvr_config_grid():
-    '''gets the dvr/config/grid dict'''
-
-    global MY_SETTINGS
-
-    ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
-    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
-    ts_query = '%s%s' % (ts_url, TS_URL_DCG, )
-    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
-    print('<!-- get_dvr_config_grid URL %s -->' % (ts_query, ))
-    ts_json = ts_response.json()
-
-    #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
-    #                                   indent=4, separators=(',', ': ')) )
-
-    return ts_json
 
 ##########################################################################################
 def get_channel_dict():
@@ -309,6 +291,9 @@ def get_channel_dict():
             # store the channel specific info
             ch_map = channel_map[channel_name]
 
+            if 'tags' in entry:
+                ch_map['tags'] = entry['tags']
+
             if 'number' in entry:
                 ch_map['number'] = entry['number']
             else:
@@ -331,13 +316,39 @@ def get_channel_dict():
 
 
 ##########################################################################################
+def get_dvr_config_grid():
+    '''gets the dvr/config/grid dict'''
+
+    global MY_SETTINGS
+
+    ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
+    ts_query = '%s%s' % (ts_url, TS_URL_DCG, )
+    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    print('<!-- get_dvr_config_grid URL %s -->' % (ts_query, ))
+    ts_json = ts_response.json()
+
+    #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
+    #                                   indent=4, separators=(',', ': ')) )
+
+    return ts_json
+
+
+##########################################################################################
 def page_channels():
     '''prints the channel list to stdout'''
 
     global MY_SETTINGS
 
+    if 'tag' in CGI_PARAMS:
+        p_tag = CGI_PARAMS.getlist('tag')
+    else:
+        p_tag = []
+
     print('<h1>Channels</h1>')
 
+    print('<p>user tag params %s</p>' % (' : '.join(p_tag), ))
     channel_dict = get_channel_dict()
     channel_tag = get_channeltag_grid()
 
@@ -347,7 +358,7 @@ def page_channels():
 - you can drag and drop the link into a VLC window</p>''' % (cdl, ))
 
     if cdl:
-        print('  <form method="get" action="?page=channels">')
+        print('  <form method="get" action="">')
         print("<b>Tag filters</b>:")
         for tag in channel_tag['entries']:
             print('<input type="checkbox" name="tag" value="%s" />%s&nbsp;&nbsp;' % (tag['uuid'], tag['name'], ))
@@ -365,20 +376,29 @@ def page_channels():
 ''')
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
         for ch_name in channel_dict:
-            print('    <tr>')
-            if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
-                if 'icon_public_url' in channel_dict[ch_name]:
-                    chan_img_url = '%s%s' % (ts_url, channel_dict[ch_name]['icon_public_url'], )
-                    print('<td class="chan_icon"><img width="12%%" height="12%%" '
-                          'src="%s" /></td>' % (chan_img_url,))
-                else:
-                    print('<td>X&nbsp;</td>')
-
             chan = channel_dict[ch_name]
-            play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
-            print('''<td><a href="%s" download="tvheadend.m3u">%s</a></td>
-      <td>%s</td>
-    </tr>''' % (play_url, ch_name, chan['number'], ))
+            show_channel = 0
+            if 'tags' not in chan or len(p_tag) == 0:
+                show_channel = 1
+            else:
+                for tag in p_tag:
+                    if tag in chan['tags']:
+                        show_channel = 1
+
+            if show_channel:
+                print('    <tr>')
+                if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
+                    if 'icon_public_url' in channel_dict[ch_name]:
+                        chan_img_url = '%s%s' % (ts_url, chan['icon_public_url'], )
+                        print('<td class="chan_icon"><img width="12%%" height="12%%" '
+                              'src="%s" /></td>' % (chan_img_url,))
+                    else:
+                        print('<td>X&nbsp;</td>')
+
+                play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
+                print('''<td><a href="%s" download="tvheadend.m3u">%s</a></td>
+          <td>%s</td>
+        </tr>''' % (play_url, ch_name, chan['number'], ))
 
         print('</table>')
 
@@ -389,13 +409,27 @@ def page_epg():
 
     global MY_SETTINGS
 
+    if 'tag' in CGI_PARAMS:
+        p_tag = CGI_PARAMS.getlist('tag')
+    else:
+        p_tag = []
+
     print('<h1>EPG</h1>')
 
     epoch_time = time.time()
 
     channel_dict = get_channel_dict()
+    channel_tag = get_channeltag_grid()
     cdl = len(channel_dict)
     if cdl:
+        print('  <form method="get" action="">')
+        print("<b>Tag filters</b>:")
+        for tag in channel_tag['entries']:
+            print('<input type="checkbox" name="tag" value="%s" />%s&nbsp;&nbsp;' % (tag['uuid'], tag['name'], ))
+        print('''    <input type="hidden" name="page" value="epg" />
+    <input type="submit" name="apply" value="apply" />
+  </form>''')
+
         print('''<p><b>Channel count: %d</b></p>
 <p>Note, the links are the streams, open in VLC
 - you can drag and drop the link into a VLC window</p>''' % (cdl, ))
@@ -416,91 +450,101 @@ def page_epg():
 
         # iterate through the channel list by name
         for ch_name in channel_dict:
-            print('    <tr>')
-            #logodir = MY_SETTINGS.get(SETTINGS_SECTION, LOGODIR)
-            if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
-                if 'icon_public_url' in channel_dict[ch_name]:
-                    chan_img_url = '%s%s' % (ts_url, channel_dict[ch_name]['icon_public_url'], )
-                    print('<td width="100px" align="right" class="chan_icon">'
-                          '<img height="12%%" src="%s" /></td>' % (chan_img_url,))
-                else:
-                    print('<td>&nbsp;</td>')
-
             chan = channel_dict[ch_name]
-            play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
-            print('      <td width="100px" align="right"><a href="%s" '
-                  'download="tvheadend.m3u">%s</a> <br />%d</td>' \
-                  % (play_url, ch_name, chan['number']))
-
-            # grab the EPG data for the channel
-            ts_query = '%s%s?limit=10&channel=%s' % (ts_url, TS_URL_EPG, chan['uuid'], )
-            print('<!-- channel EPG URL %s -->' % (ts_query, ))
-            ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
-            ts_json = ts_response.json()
-
-            if len(ts_json['entries']):
-                #chan[EPG] = ts_json['entries']
-                print('       <td valign="top" nowrap width="1600px"><div class="epg_row">')
-
-                entry_num = 0
-                for entry in ts_json['entries']:
-                    time_start = int(entry['start'])
-                    time_stop = int(entry['stop'])
-
-                    # don't show far future, stop screen being too wide
-                    if time_start - epoch_time < MAX_FUTURE:
-                        if 'title' in entry:
-                            try:
-                                # FIXME! this stops the unicode error seen on channel BBC R n Gael
-                                # 'ascii' codec can't encode character '\xe8'
-                                # in position 4: ordinal not in range(128)
-                                title = bytes.decode(entry['title'].encode("ascii", "ignore"))
-                            except UnicodeEncodeError as uc_ex:
-                                title = '%s - %s' % (type(uc_ex).__name__, str(uc_ex), )
-                        else:
-                            title = '</i>Untitled</i>'
-
-                        if 'summary' in entry:
-                            # FIXME! this removes unicodeness from summary
-                            summary = bytes.decode(entry['summary'].encode("ascii", "ignore"))
-                        else:
-                            summary = ''
-
-                        duration = time_stop - time_start
-                        time_left = duration
-                        box_width = duration / SECS_P_PIXEL
-
-                        # print the boxes containing each program
-                        time_offset = time_start - epoch_time
-                        if time_offset < 0:
-                            time_left = time_stop - epoch_time
-                            box_width = time_left / SECS_P_PIXEL
-                            print('<div class="epg_now" style="width: '
-                                  '%dpx; max-width: %dpx">' % (box_width, box_width,) )
-                        elif entry_num == 0:
-                            width_offset = time_offset / SECS_P_PIXEL
-                            print('<div class="epg_none" style="width: %dpx; '
-                                  'max-width: %dpx">%d</div>'
-                                  % (width_offset, width_offset, width_offset,) )
-                        else:
-                            print('<div class="epg_next" style="width: '
-                                  '%dpx; max-width: %dpx">' % (box_width, box_width,) )
-                        print('<a href="?page=record&event_id=%s" target="tvh_epg_record" width="320" height="320">'
-                              '&reg;</a>&nbsp;<b>%s</b><br />' % (entry['eventId'], title, ))
-                        print('<div class="tooltip"><span class="tooltiptext">'
-                              '%s</span>' % (summary, ))
-                        if time_offset > 0:
-                            print('start %s<br />duration %s'            \
-                                  % (epoch_to_human(time_start), secs_to_human(duration), ))
-                        else:
-                            print('%s left of %s'
-                                  % (secs_to_human(time_left), secs_to_human(duration), ))
-                        print('      </div></div>')
-                        entry_num += 1
-                print('<div style="clear:both; font-size:1px;"></div></div></td>')
+            show_channel = 0
+            if 'tags' not in chan or len(p_tag) == 0:
+                show_channel = 1
             else:
-                print('      <td>&nbsp</td>')
-            print('    </tr>')
+                for tag in p_tag:
+                    if tag in chan['tags']:
+                        show_channel = 1
+
+            if show_channel:
+                print('    <tr>')
+                #logodir = MY_SETTINGS.get(SETTINGS_SECTION, LOGODIR)
+                if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
+                    if 'icon_public_url' in chan:
+                        chan_img_url = '%s%s' % (ts_url, chan['icon_public_url'], )
+                        print('<td width="100px" align="right" class="chan_icon">'
+                              '<img height="12%%" src="%s" /></td>' % (chan_img_url,))
+                    else:
+                        print('<td>&nbsp;</td>')
+
+                play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
+                print('      <td width="100px" align="right"><a href="%s" '
+                      'download="tvheadend.m3u">%s</a> <br />%d</td>' \
+                      % (play_url, ch_name, chan['number']))
+
+                # grab the EPG data for the channel
+                ts_query = '%s%s?limit=10&channel=%s' % (ts_url, TS_URL_EPG, chan['uuid'], )
+                print('<!-- channel EPG URL %s -->' % (ts_query, ))
+                ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+                ts_json = ts_response.json()
+
+                if len(ts_json['entries']):
+                    #chan[EPG] = ts_json['entries']
+                    print('       <td valign="top" nowrap width="1600px"><div class="epg_row">')
+
+                    entry_num = 0
+                    for entry in ts_json['entries']:
+                        time_start = int(entry['start'])
+                        time_stop = int(entry['stop'])
+
+                        # don't show far future, stop screen being too wide
+                        if time_start - epoch_time < MAX_FUTURE:
+                            if 'title' in entry:
+                                try:
+                                    # FIXME! this stops the unicode error seen on channel BBC R n Gael
+                                    # 'ascii' codec can't encode character '\xe8'
+                                    # in position 4: ordinal not in range(128)
+                                    title = bytes.decode(entry['title'].encode("ascii", "ignore"))
+                                except UnicodeEncodeError as uc_ex:
+                                    title = '%s - %s' % (type(uc_ex).__name__, str(uc_ex), )
+                            else:
+                                title = '</i>Untitled</i>'
+
+                            if 'summary' in entry:
+                                # FIXME! this removes unicodeness from summary
+                                summary = bytes.decode(entry['summary'].encode("ascii", "ignore"))
+                            else:
+                                summary = ''
+
+                            duration = time_stop - time_start
+                            time_left = duration
+                            box_width = duration / SECS_P_PIXEL
+
+                            # print the boxes containing each program
+                            time_offset = time_start - epoch_time
+                            if time_offset < 0:
+                                time_left = time_stop - epoch_time
+                                box_width = time_left / SECS_P_PIXEL
+                                print('<div class="epg_now" style="width: '
+                                      '%dpx; max-width: %dpx">' % (box_width, box_width,) )
+                            elif entry_num == 0:
+                                width_offset = time_offset / SECS_P_PIXEL
+                                print('<div class="epg_none" style="width: %dpx; '
+                                      'max-width: %dpx">%d</div>'
+                                      % (width_offset, width_offset, width_offset,) )
+                            else:
+                                print('<div class="epg_next" style="width: '
+                                      '%dpx; max-width: %dpx">' % (box_width, box_width,) )
+                            print('<a href="?page=record&event_id=%s" target="tvh_epg_record" width="320" height="320">'
+                                  '&reg;</a>&nbsp;<b>%s</b><br />' % (entry['eventId'], title, ))
+                            print('<div class="tooltip"><span class="tooltiptext">'
+                                  '%s</span>' % (summary, ))
+                            if time_offset > 0:
+                                print('start %s<br />duration %s'            \
+                                      % (epoch_to_human(time_start), secs_to_human(duration), ))
+                            else:
+                                print('%s left of %s'
+                                      % (secs_to_human(time_left), secs_to_human(duration), ))
+                            print('      </div></div>')
+                            entry_num += 1
+                    print('<div style="clear:both; font-size:1px;"></div></div></td>')
+                else:
+                    print('      <td>&nbsp</td>')
+                print('    </tr>')
+
         print('</table>')
 
 
