@@ -6,9 +6,12 @@
 * save a cache of channel information
 * make display more attractive
 * add a filter feature, to exclude or only include channels
-
+* channel tag filters should be preserved when you submit
 
 ## Done - in reverse order
+
+20181009
+* channel tag filters now work
 
 20181006
 * record function pops up a separate window; no need to confirm the profile if there's only one
