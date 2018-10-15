@@ -7,6 +7,7 @@ import  cgi
 import  cgitb
 import  configparser
 import  datetime
+import  hashlib
 import  json
 import  os
 import  stat
@@ -27,6 +28,8 @@ import  requests
 # pylint:disable=global-variable-not-assigned
 
 ##########################################################################################
+
+URL_GITHUB_HASH_SELF       = 'https://api.github.com/repos/speculatrix/tvh_epg/contents/tvh_epg.py'
 
 
 TS_URL_CHN = 'api/channel/grid'
@@ -96,19 +99,6 @@ SETTINGS_DEFAULTS = {   TS_URL  : { TITLE:  'URL of TV Headend Server',
 
 DOCROOT_DEFAULT = '/home/hts'
 
-
-
-##########################################################################################
-def input_form_escape(text):
-    """escape special characters into html input forms"""
-    return "".join(INPUT_FORM_ESCAPE_TABLE.get(c, c) for c in text)
-
-
-
-##########################################################################################
-def url_escape(text):
-    """escape special characters for URL"""
-    return "".join(URL_ESCAPE_TABLE.get(c, c) for c in text)
 
 
 ##########################################################################################
@@ -187,29 +177,38 @@ Please do the following - needs root:
     return(0, 'OK')
 
 
-##########################################################################################
-def secs_to_human(t_secs):
-    '''turns a duration in seconds into Xd HH:MM:SS'''
+#####################################################################################################################
+def get_github_hash_self():
+    """calculates the git hash of the version of this script in github"""
 
-    #t_secs = 86400 + 4000 + 120 + 5
+    githubhash = 'UNKNOWN'
 
-    t_mins = int(t_secs / 60)
-    t_hours = int(t_mins / 60)
-    t_days = int(t_hours / 24)
-    r_days = t_days
+    gh_resp = requests.get(URL_GITHUB_HASH_SELF)
+    gh_json = gh_resp.json()
 
-    r_hours = t_hours - r_days * 24
-    r_mins = t_mins - r_days * 24 * 60      - r_hours * 60
-    #r_secs = t_secs - r_days * 24 * 60 * 60 - r_hours * 60 * 60 - r_mins * 60
+    return gh_json['sha']
 
-    h_days = ''
-    if r_days > 0:
-        h_days = '%dd, ' % r_days
 
-    #h_time = '%s%02d:%02d:%02d' % (h_days, r_hours, r_mins, r_secs, )
-    h_time = '%s%02d:%02d' % (h_days, r_hours, r_mins, )
+#####################################################################################################################
+def get_githash_self():
+    """calculates the git hash of the running script"""
 
-    return h_time
+    # stat this file
+    fullfile_name = __file__
+    fullfile_stat = os.stat(fullfile_name)
+
+    # read this entire file into memory
+    fullfile_content = ''
+    with open(fullfile_name, 'rb') as fullfile_fh:
+        fullfile_content = fullfile_fh.read()
+
+    # do what "git hash-object" does
+    sha_obj = hashlib.sha1()
+    sha_obj.update(b'blob %d\0' % fullfile_stat.st_size)
+    sha_obj.update(fullfile_content)
+
+
+    return sha_obj.hexdigest()
 
 
 ##########################################################################################
@@ -333,6 +332,21 @@ def get_dvr_config_grid():
     #                                   indent=4, separators=(',', ': ')) )
 
     return ts_json
+
+
+################################################################################
+def html_page_footer():
+    '''no surprises'''
+
+    print('''</body>
+</html>''')
+
+
+##########################################################################################
+def input_form_escape(text):
+    """escape special characters into html input forms"""
+    return "".join(INPUT_FORM_ESCAPE_TABLE.get(c, c) for c in text)
+
 
 
 ##########################################################################################
@@ -747,6 +761,29 @@ def page_status():
               '- does configured user have admin rights?</p>' % (ts_response.status_code, ) )
 
 
+#####################################################################################################################
+def page_upgrade_check():
+    '''the upgrade check page'''
+
+
+    ################################################
+    # see if this script is up to date
+    githash_self           = get_githash_self()
+    githubhash_self        = get_github_hash_self()
+
+    print('<p>github hash of this file %s<br />\n' % (githubhash_self, ))
+    print('git hash of this file %s<br />\n' % (githash_self, ))
+
+    print('<p>')
+    if githubhash_self == githash_self:
+        print('Great, this program is the same as the version on github.\n<br />\n')
+    else:
+        print('This program appears to be out of date, please update it.\n<br />\n')
+
+
+    print('</p>')
+
+
 ################################################################################
 def m3u_page_header():
     '''page header for m3u playlists'''
@@ -863,14 +900,38 @@ def html_page_header():
 <a href="?page=serverinfo">Server Info</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=settings">Settings</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=status">Status</a>&nbsp;&nbsp;&nbsp;
+<a href="?page=upgrade_check">Upgrade Check</a>&nbsp;&nbsp;&nbsp;
 ''')
 
-################################################################################
-def html_page_footer():
-    '''no surprises'''
+##########################################################################################
+def secs_to_human(t_secs):
+    '''turns a duration in seconds into Xd HH:MM:SS'''
 
-    print('''</body>
-</html>''')
+    #t_secs = 86400 + 4000 + 120 + 5
+
+    t_mins = int(t_secs / 60)
+    t_hours = int(t_mins / 60)
+    t_days = int(t_hours / 24)
+    r_days = t_days
+
+    r_hours = t_hours - r_days * 24
+    r_mins = t_mins - r_days * 24 * 60      - r_hours * 60
+    #r_secs = t_secs - r_days * 24 * 60 * 60 - r_hours * 60 * 60 - r_mins * 60
+
+    h_days = ''
+    if r_days > 0:
+        h_days = '%dd, ' % r_days
+
+    #h_time = '%s%02d:%02d:%02d' % (h_days, r_hours, r_mins, r_secs, )
+    h_time = '%s%02d:%02d' % (h_days, r_hours, r_mins, )
+
+    return h_time
+
+
+##########################################################################################
+def url_escape(text):
+    """escape special characters for URL"""
+    return "".join(URL_ESCAPE_TABLE.get(c, c) for c in text)
 
 
 ################################################################################
@@ -941,6 +1002,10 @@ def web_interface():
     elif p_page == 'settings':
         html_page_header()
         page_settings()
+        html_page_footer()
+    elif p_page == 'upgrade_check':
+        html_page_header()
+        page_upgrade_check()
         html_page_footer()
     else:
         html_page_header()
