@@ -10,6 +10,9 @@
 
 ## Done - in reverse order
 
+20181015
+* added upgrade check
+
 20181009
 * channel tag filters now work
 
