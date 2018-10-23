@@ -362,7 +362,6 @@ def page_channels():
 
     print('<h1>Channels</h1>')
 
-    print('<p>user tag params %s</p>' % (' : '.join(p_tag), ))
     channel_dict = get_channel_dict()
     channel_tag = get_channeltag_grid()
 
