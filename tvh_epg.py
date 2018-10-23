@@ -645,9 +645,11 @@ def page_serverinfo():
     print('<h1>Server Info</h1>')
 
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
     ts_query = '%s/%s' % (ts_url, TS_URL_SVI, )
     print('<!-- serverinfo URL %s -->' % (ts_query, ))
-    ts_response = requests.get(ts_query, auth=(TS_USER, TS_PASS))
+    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     ts_json = ts_response.json()
 
     print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, indent=4, separators=(',', ': ')) )
