@@ -541,7 +541,7 @@ def page_epg():
                             else:
                                 print('<div class="epg_next" style="width: '
                                       '%dpx; max-width: %dpx">' % (box_width, box_width,) )
-                            print('<a href="?page=record&event_id=%s" target="tvh_epg_record" width="320" height="320">'
+                            print('<a title="record this" href="?page=record&event_id=%s" target="tvh_epg_record" width="320" height="320">'
                                   '&reg;</a>&nbsp;<b>%s</b><br />' % (entry['eventId'], title, ))
                             print('<div class="tooltip"><span class="tooltiptext">'
                                   '%s</span>' % (summary, ))
