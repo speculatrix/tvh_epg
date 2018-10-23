@@ -81,7 +81,7 @@ TITLE = 'title'
 DFLT = 'default'
 # default values of the settings when being created
 SETTINGS_DEFAULTS = {   TS_URL  : { TITLE:  'URL of TV Headend Server',
-                                    DFLT:   'http://tvh.example.com:9981/'
+                                    DFLT:   'http://tvh.example.com:9981'
                                   },
                         TS_USER : { TITLE:  'Username on TVH server',
                                     DFLT:   'ts_user'
@@ -240,7 +240,7 @@ def get_channeltag_grid():
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
-    ts_query = '%s%s' % (ts_url, TS_URL_CTG, )
+    ts_query = '%s/%s' % (ts_url, TS_URL_CTG, )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     print('<!-- get_dvr_config_grid URL %s -->' % (ts_query, ))
     ts_json = ts_response.json()
@@ -260,7 +260,7 @@ def get_channel_dict():
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
-    ts_query = '%s%s?limit=400' % (ts_url, TS_URL_CHN, )
+    ts_query = '%s/%s?limit=400' % (ts_url, TS_URL_CHN, )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     print('<!-- get_channel_dict URL %s -->' % (ts_query, ))
     ts_json = ts_response.json()
@@ -323,7 +323,7 @@ def get_dvr_config_grid():
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
-    ts_query = '%s%s' % (ts_url, TS_URL_DCG, )
+    ts_query = '%s/%s' % (ts_url, TS_URL_DCG, )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     print('<!-- get_dvr_config_grid URL %s -->' % (ts_query, ))
     ts_json = ts_response.json()
@@ -490,7 +490,7 @@ def page_epg():
                       % (play_url, ch_name, chan['number']))
 
                 # grab the EPG data for the channel
-                ts_query = '%s%s?limit=10&channel=%s' % (ts_url, TS_URL_EPG, chan['uuid'], )
+                ts_query = '%s/%s?limit=10&channel=%s' % (ts_url, TS_URL_EPG, chan['uuid'], )
                 print('<!-- channel EPG URL %s -->' % (ts_query, ))
                 ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
                 ts_json = ts_response.json()
@@ -579,7 +579,7 @@ def page_m3u(p_uuid):
     '''generates an m3u file to be played in e.g. vlc'''
 
     print('#EXTM3U')
-    print('%s/%s' % (TS_URL_STR, p_uuid, ))
+    print('%s/%s/%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_URL), TS_URL_STR, p_uuid, ))
 
 
 ################################################################################
@@ -619,7 +619,7 @@ def page_record(p_event_id, p_profile):
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
         ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
         ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
-        ts_query = '%s%s?config_uuid=%s&event_id=%s' % (ts_url, TS_URL_CBE, p_profile, p_event_id,)
+        ts_query = '%s/%s?config_uuid=%s&event_id=%s' % (ts_url, TS_URL_CBE, p_profile, p_event_id,)
         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
         print('<!-- page_record CBE URL %s -->' % (ts_url, ))
         ts_json = ts_response.json()
@@ -644,9 +644,11 @@ def page_serverinfo():
 
     print('<h1>Server Info</h1>')
 
-    ts_response = requests.get(TS_URL_SVI, auth=(TS_USER, TS_PASS))
+    ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_query = '%s/%s' % (ts_url, TS_URL_SVI, )
+    print('<!-- serverinfo URL %s -->' % (ts_query, ))
+    ts_response = requests.get(ts_query, auth=(TS_USER, TS_PASS))
     ts_json = ts_response.json()
-    #print('<!-- serverinfo URL %s -->' % (TS_URL_SVI, ))
 
     print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, indent=4, separators=(',', ': ')) )
 
@@ -737,9 +739,9 @@ def page_status():
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
-    ts_query = '%s%s' % (ts_url, TS_URL_STI,)
+    ts_query = '%s/%s' % (ts_url, TS_URL_STI,)
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
-    print('<!-- status inputs URL %s -->' % (TS_URL_STI, ))
+    print('<!-- status inputs URL %s -->' % (ts_query, ))
     if ts_response.status_code == 200:
         ts_json = ts_response.json()
         print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True,
@@ -749,9 +751,9 @@ def page_status():
               '- does configured user have admin rights?</p>' % (ts_response.status_code, ) )
 
     print('<h2>Connection Status</h2>')
-    ts_query = '%s%s' % (ts_url, TS_URL_STC,)
+    ts_query = '%s/%s' % (ts_url, TS_URL_STC,)
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
-    #print('<!-- status connections URL %s -->' % (TS_URL_STC, ))
+    #print('<!-- status connections URL %s -->' % (ts_query, ))
     if ts_response.status_code == 200:
         ts_json = ts_response.json()
         print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True,
