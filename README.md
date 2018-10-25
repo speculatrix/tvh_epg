@@ -8,7 +8,8 @@ data from a TVHeadEnd server and presents it in a grid form, with
 a link to click to play the channel.
 
 I expect to add more features to make it more useful... I'd be
-grateful for any help I can get!
+grateful for any help I can get! See the ROADMAP for plans and
+changes.
 
 
 ## installation
@@ -16,9 +17,7 @@ grateful for any help I can get!
 * install a web server that can execute CGI-BIN programs, e.g. apache2 with "sudo apt-get install apache2"
 * enable cgi-bin programs e.g. run "sudo a2enmod cgid" 
 * put the tvh_epg.py into /usr/lib/cgi-bin
-* put the config file into /usr/lib/cgi-bin/tvh_epg_config/
-* edit the config with your server details
-
+* access the CGI through your web browser and it will tell you what additional setup is needed
 * if you want channel icons, put them into a directory called TVLogos under the document root
 ** You can get FreeSat icons from https://github.com/Elky666/TVLogos
 
