@@ -36,6 +36,7 @@ TS_URL_CHN = 'api/channel/grid'
 TS_URL_CTG = 'api/channeltag/grid'
 TS_URL_CBE = 'api/dvr/entry/create_by_event'
 TS_URL_DCG = 'api/dvr/config/grid'
+TS_URL_DEG = 'api/dvr/entry/grid_finished'
 TS_URL_EPG = 'api/epg/events/grid'
 
 TS_URL_STC = 'api/status/connections'
@@ -63,6 +64,8 @@ INPUT_FORM_ESCAPE_TABLE = {
 URL_ESCAPE_TABLE = {
     " ": "%20"          ,
 }
+
+TD_EMPTY_CELL = '<td>&nbsp;</td>'
 
 # state files, queues, logs and so on are stored in this directory
 CONTROL_DIR       = '/var/lib/tvh_epg'
@@ -177,11 +180,9 @@ Please do the following - needs root:
     return(0, 'OK')
 
 
-#####################################################################################################################
+##########################################################################################
 def get_github_hash_self():
     """calculates the git hash of the version of this script in github"""
-
-    githubhash = 'UNKNOWN'
 
     gh_resp = requests.get(URL_GITHUB_HASH_SELF)
     gh_json = gh_resp.json()
@@ -189,7 +190,7 @@ def get_github_hash_self():
     return gh_json['sha']
 
 
-#####################################################################################################################
+##########################################################################################
 def get_githash_self():
     """calculates the git hash of the running script"""
 
@@ -212,13 +213,23 @@ def get_githash_self():
 
 
 ##########################################################################################
-def epoch_to_human(epoch_time):
+def epoch_to_human_duration(epoch_time):
     '''takes numeric sec since unix epoch and returns humanly readable time'''
 
     #return time.asctime(time.localtime(epoch_time))
 
     human_dt = datetime.datetime.fromtimestamp(epoch_time)
     return human_dt.strftime("%H:%M")
+
+
+##########################################################################################
+def epoch_to_human_date(epoch_time):
+    '''takes numeric sec since unix epoch and returns humanly readable time'''
+
+    #return time.asctime(time.localtime(epoch_time))
+
+    human_dt = datetime.datetime.fromtimestamp(epoch_time)
+    return human_dt.strftime("%d-%m-%Y %H:%M")
 
 
 ##########################################################################################
@@ -334,7 +345,7 @@ def get_dvr_config_grid():
     return ts_json
 
 
-################################################################################
+##########################################################################################
 def html_page_footer():
     '''no surprises'''
 
@@ -374,7 +385,8 @@ def page_channels():
         print('  <form method="get" action="">')
         print("<b>Tag filters</b>:")
         for tag in channel_tag['entries']:
-            print('<input type="checkbox" name="tag" value="%s" />%s&nbsp;&nbsp;' % (tag['uuid'], tag['name'], ))
+            print('<input type="checkbox" name="tag" value="%s" />%s&nbsp;&nbsp;'
+                  % (tag['uuid'], tag['name'], ))
         print('''    <input type="hidden" name="page" value="channels" />
     <input type="submit" name="apply" value="apply" />
   </form>''')
@@ -438,7 +450,8 @@ def page_epg():
         print('  <form method="get" action="">')
         print("<b>Tag filters</b>:")
         for tag in channel_tag['entries']:
-            print('<input type="checkbox" name="tag" value="%s" />%s&nbsp;&nbsp;' % (tag['uuid'], tag['name'], ))
+            print('<input type="checkbox" name="tag" value="%s" />%s&nbsp;&nbsp;'
+                  % (tag['uuid'], tag['name'], ))
         print('''    <input type="hidden" name="page" value="epg" />
     <input type="submit" name="apply" value="apply" />
   </form>''')
@@ -507,9 +520,10 @@ def page_epg():
                         if time_start - epoch_time < MAX_FUTURE:
                             if 'title' in entry:
                                 try:
-                                    # FIXME! this stops the unicode error seen on channel BBC R n Gael
-                                    # 'ascii' codec can't encode character '\xe8'
-                                    # in position 4: ordinal not in range(128)
+                                    # FIXME! this stops the unicode error seen on
+                                    # channel BBC R n Gael = 'ascii' codec can't
+                                    # encode character '\xe8' in position 4:
+                                    # ordinal not in range(128)
                                     title = bytes.decode(entry['title'].encode("ascii", "ignore"))
                                 except UnicodeEncodeError as uc_ex:
                                     title = '%s - %s' % (type(uc_ex).__name__, str(uc_ex), )
@@ -541,13 +555,15 @@ def page_epg():
                             else:
                                 print('<div class="epg_next" style="width: '
                                       '%dpx; max-width: %dpx">' % (box_width, box_width,) )
-                            print('<a title="record this" href="?page=record&event_id=%s" target="tvh_epg_record" width="320" height="320">'
+                            print('<a title="record this" href="?page=record&event_id=%s"'
+                                  ' target="tvh_epg_record" width="320" height="320">'
                                   '&reg;</a>&nbsp;<b>%s</b><br />' % (entry['eventId'], title, ))
                             print('<div class="tooltip"><span class="tooltiptext">'
                                   '%s</span>' % (summary, ))
                             if time_offset > 0:
                                 print('start %s<br />duration %s'            \
-                                      % (epoch_to_human(time_start), secs_to_human(duration), ))
+                                      % (epoch_to_human_duration(time_start), \
+                                         secs_to_human(duration), ))
                             else:
                                 print('%s left of %s'
                                       % (secs_to_human(time_left), secs_to_human(duration), ))
@@ -561,7 +577,7 @@ def page_epg():
         print('</table>')
 
 
-################################################################################
+##########################################################################################
 def page_error(error_text):
     '''prints error page contents'''
 
@@ -573,15 +589,17 @@ def page_error(error_text):
     print('<pre>settings sections: %s</pre>' % (MY_SETTINGS.sections(), ))
 
 
-################################################################################
+##########################################################################################
 def page_m3u(p_uuid):
     '''generates an m3u file to be played in e.g. vlc'''
+
+    global MY_SETTINGS
 
     print('#EXTM3U')
     print('%s/%s/%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_URL), TS_URL_STR, p_uuid, ))
 
 
-################################################################################
+##########################################################################################
 def page_record(p_event_id, p_profile):
     '''checks the recording param and generated DVR record'''
 
@@ -633,6 +651,61 @@ def page_record(p_event_id, p_profile):
         print('<input type="hidden" name="page" value="record" />')
         print('<input type="submit" name="Close" value="Close" onclick="self.close()" />')
         print('</form method="get">')
+
+
+##########################################################################################
+def page_recordings():
+    '''prints the status information, useful to check the API call is working at all'''
+
+    global MY_SETTINGS
+
+    print('<h1>Recordings</h1>')
+
+    ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
+    ts_query = '%s/%s' % (ts_url, TS_URL_DEG,)
+    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    print('<!-- status inputs URL %s -->' % (ts_query, ))
+    if ts_response.status_code != 200:
+        print('<p>HTTP error response %d'
+              '- does configured user have admin rights?</p>' % (ts_response.status_code, ) )
+        return
+
+    ts_json = ts_response.json()
+    if 'entries' in ts_json:
+        print('<table><tr><th>Channel Name</th><th>Title</th><th>Date</th><th>Summary</th></tr>')
+        for entry in ts_json['entries']:
+            print('<tr>')
+            if 'channelname' in entry:
+                print('<td>%s</td>' % (entry['channelname'], ))
+            else:
+                print(TD_EMPTY_CELL)
+
+            if 'title' in entry and 'eng' in entry['title']:
+                print('<td><a href="%s/play/%s" download="tvheadend.m3u">%s</a></td>'
+                      % (MY_SETTINGS.get(SETTINGS_SECTION, TS_URL), \
+                         entry['url'], entry['title']['eng'], ))
+            else:
+                print(TD_EMPTY_CELL)
+
+            if 'start' in entry:
+                print('<td>%s</td>' % (epoch_to_human_date(entry['start']), ))
+            else:
+                print(TD_EMPTY_CELL)
+
+            if 'summary' in entry and 'eng' in entry['title']:
+                print('<td>%s</td>' % (entry['summary']['eng'], ))
+            elif 'subtitle' in entry and 'eng' in entry['title']:
+                print('<td>%s</td>' % (entry['subtitle']['eng'], ))
+            else:
+                print(TD_EMPTY_CELL)
+
+            print('</tr>')
+        print('</table>')
+
+    print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True,
+                                       indent=4, separators=(',', ': ')) )
 
 
 #########################################################################################
@@ -727,8 +800,7 @@ def page_settings():
         print('<b>Error</b>, failed to open and write config file "%s"' % (CONFIG_FILE_NAME, ))
 
 
-
-################################################################################
+##########################################################################################
 def page_status():
     '''prints the status information, useful to check the API call is working at all'''
 
@@ -764,7 +836,7 @@ def page_status():
               '- does configured user have admin rights?</p>' % (ts_response.status_code, ) )
 
 
-#####################################################################################################################
+##########################################################################################
 def page_upgrade_check():
     '''the upgrade check page'''
 
@@ -787,14 +859,14 @@ def page_upgrade_check():
     print('</p>')
 
 
-################################################################################
+##########################################################################################
 def m3u_page_header():
     '''page header for m3u playlists'''
 
     print('Content-Type: audio/x-mpegurl\n')
 
 
-################################################################################
+##########################################################################################
 def html_page_header():
     '''standard html page header'''
 
@@ -868,7 +940,7 @@ def html_page_header():
         text-align: center;
         padding: 5px 0;
         border-radius: 6px;
-     
+
         /* Position the tooltip text */
         position: absolute;
         z-index: 1;
@@ -900,6 +972,7 @@ def html_page_header():
     print('''
 <b>Menu:</b>&nbsp;<a href="?page=epg">EPG</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=channels">Channels</a>&nbsp;&nbsp;&nbsp;
+<a href="?page=recordings">Recordings</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=serverinfo">Server Info</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=settings">Settings</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=status">Status</a>&nbsp;&nbsp;&nbsp;
@@ -937,7 +1010,7 @@ def url_escape(text):
     return "".join(URL_ESCAPE_TABLE.get(c, c) for c in text)
 
 
-################################################################################
+##########################################################################################
 def web_interface():
     '''provides web interface'''
 
@@ -994,6 +1067,10 @@ def web_interface():
         html_page_header()
         page_record(p_event_id, p_profile)
         html_page_footer()
+    elif p_page == 'recordings':
+        html_page_header()
+        page_recordings()
+        html_page_footer()
     elif p_page == 'serverinfo':
         html_page_header()
         page_serverinfo()
@@ -1012,7 +1089,6 @@ def web_interface():
         html_page_footer()
     else:
         html_page_header()
-        page_record(p_event_id, p_profile)
         #page_error('no page selected')
         html_page_footer()
         #illegal_param_count += 1
