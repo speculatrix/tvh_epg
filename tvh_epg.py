@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 '''
 a really really basic EPG for TVHeadend
 '''
 
 import  cgi
 import  cgitb
+import	codecs
 import  configparser
 import  datetime
 import  hashlib
@@ -418,9 +420,9 @@ def page_channels():
                         print('<td class="chan_icon"><img width="12%%" height="12%%" '
                               'src="%s" /></td>' % (chan_img_url,))
                     else:
-                        print('<td>X&nbsp;</td>')
+                        print('<td>&nbsp;</td>')
 
-                play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
+                play_url = '?page=m3u&amp;uuid=%s' % (chan['uuid'], )
                 print('''<td><a href="%s" download="tvheadend.m3u">%s</a></td>
           <td>%s</td>
         </tr>''' % (play_url, ch_name, chan['number'], ))
@@ -496,13 +498,13 @@ def page_epg():
                     else:
                         print('<td>&nbsp;</td>')
 
-                play_url = '?page=m3u&uuid=%s' % (chan['uuid'], )
+                play_url = '?page=m3u&amp;uuid=%s' % (chan['uuid'], )
                 print('      <td width="100px" align="right"><a href="%s" '
                       'download="tvheadend.m3u">%s</a> <br />%d</td>' \
                       % (play_url, ch_name, chan['number']))
 
                 # grab the EPG data for the channel
-                ts_query = '%s/%s?limit=10&channel=%s' % (ts_url, TS_URL_EPG, chan['uuid'], )
+                ts_query = '%s/%s?limit=10&amp;channel=%s' % (ts_url, TS_URL_EPG, chan['uuid'], )
                 print('<!-- channel EPG URL %s -->' % (ts_query, ))
                 ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
                 ts_json = ts_response.json()
@@ -519,20 +521,12 @@ def page_epg():
                         # don't show far future, stop screen being too wide
                         if time_start - epoch_time < MAX_FUTURE:
                             if 'title' in entry:
-                                try:
-                                    # FIXME! this stops the unicode error seen on
-                                    # channel BBC R n Gael = 'ascii' codec can't
-                                    # encode character '\xe8' in position 4:
-                                    # ordinal not in range(128)
-                                    title = bytes.decode(entry['title'].encode("ascii", "ignore"))
-                                except UnicodeEncodeError as uc_ex:
-                                    title = '%s - %s' % (type(uc_ex).__name__, str(uc_ex), )
+                                title = entry['title']
                             else:
                                 title = '</i>Untitled</i>'
 
                             if 'summary' in entry:
-                                # FIXME! this removes unicodeness from summary
-                                summary = bytes.decode(entry['summary'].encode("ascii", "ignore"))
+                                summary = entry['summary']
                             else:
                                 summary = ''
 
@@ -555,11 +549,18 @@ def page_epg():
                             else:
                                 print('<div class="epg_next" style="width: '
                                       '%dpx; max-width: %dpx">' % (box_width, box_width,) )
-                            print('<a title="record this" href="?page=record&event_id=%s"'
-                                  ' target="tvh_epg_record" width="320" height="320">'
-                                  '&reg;</a>&nbsp;<b>%s</b><br />' % (entry['eventId'], title, ))
-                            print('<div class="tooltip"><span class="tooltiptext">'
-                                  '%s</span>' % (summary, ))
+                            # print the programme details
+                            try:
+                                print('<a title="record this" href="?page=record&amp;event_id=%s"'
+                                      ' target="tvh_epg_record" width="320" height="320">'
+                                      '&amp;reg;</a>&nbsp;<b>%s</b><br />'
+                                      % (entry['eventId'], title, ))
+                                print('<div class="tooltip"><span class="tooltiptext">'
+                                      '%s</span>' % (summary, ))
+                            except UnicodeEncodeError as uc_ex:
+                                print('EXCEPTION: "<i>%s - %s</i>"'
+                                      % (type(uc_ex).__name__, str(uc_ex), ), )
+
                             if time_offset > 0:
                                 print('start %s<br />duration %s'            \
                                       % (epoch_to_human_duration(time_start), \
@@ -636,7 +637,8 @@ def page_record(p_event_id, p_profile):
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
         ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
         ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
-        ts_query = '%s/%s?config_uuid=%s&event_id=%s' % (ts_url, TS_URL_CBE, p_profile, p_event_id,)
+        ts_query = '%s/%s?config_uuid=%s&amp;event_id=%s' %    \
+                  (ts_url, TS_URL_CBE, p_profile, p_event_id,)
         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
         print('<!-- page_record CBE URL %s -->' % (ts_url, ))
         ts_json = ts_response.json()
@@ -871,11 +873,11 @@ def html_page_header():
     '''standard html page header'''
 
 
-    #print('Content-Type: text/plain\n')    # plain text for extreme debugging
-    print('Content-Type: text/html\n')     # HTML is following
-
+    #print('Content-Type: text/plain\n')                # plain text for extreme debugging
+    print('Content-Type: text/html; charset=utf-8\n')
     print('''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">''')
+    print('<meta charset="utf-8"/>')
 
     print('''
 <html>
@@ -1044,6 +1046,7 @@ def web_interface():
 
     if p_page == EPG:
         html_page_header()
+
         page_epg()
         html_page_footer()
     elif p_page == 'error':
@@ -1104,8 +1107,11 @@ CONFIG_FILE_NAME = os.path.join(CONTROL_DIR, SETTINGS_FILE)
 MY_SETTINGS = configparser.ConfigParser()
 
 if len(sys.argv) <= 1:
+    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+
     DOCROOT = os.environ.get('DOCUMENT_ROOT', DOCROOT_DEFAULT)
     cgitb.enable(display=0, logdir=DOCROOT + '/python_errors', format='html')
+
     web_interface()
 
 else:
