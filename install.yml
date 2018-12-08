@@ -1,0 +1,17 @@
+- hosts: all
+  become: yes
+  become_user: root
+  tasks:
+    - name: Install Apache
+      apt:
+        name: apach2
+        update_cache: yes
+        state: latest`
+    - name: Enable cgid module
+      apache2_module:
+        name: cgid
+        state: present
+    - name: Copy program into place
+      copy:
+        src: tvh_epg.py
+        dest: /usr/lib/cgi-bin/tvh_epg.py
