@@ -4,20 +4,20 @@
 a really really basic EPG for TVHeadend
 '''
 
-import  cgi
-import  cgitb
-import	codecs
-import  configparser
-import  datetime
-import  hashlib
-import  json
-import  os
-import  stat
-import  sys
-import  time
+import cgi
+import cgitb
+import codecs
+import configparser
+import datetime
+import hashlib
+import json
+import os
+import stat
+import sys
+import time
 
-import  collections
-import  requests
+import collections
+import requests
 
 # requires making code less readable:
 # pylint:disable=bad-whitespace
@@ -31,8 +31,7 @@ import  requests
 
 ##########################################################################################
 
-URL_GITHUB_HASH_SELF       = 'https://api.github.com/repos/speculatrix/tvh_epg/contents/tvh_epg.py'
-
+URL_GITHUB_HASH_SELF = 'https://api.github.com/repos/speculatrix/tvh_epg/contents/tvh_epg.py'
 
 TS_URL_CHN = 'api/channel/grid'
 TS_URL_CTG = 'api/channeltag/grid'
@@ -47,35 +46,31 @@ TS_URL_SVI = 'api/serverinfo'
 
 TS_URL_STR = 'stream/channel'
 
-
 CGI_PARAMS = cgi.FieldStorage()
-
 
 EPG = 'epg'
 
-SECS_P_PIXEL = 10           # how many seconds per pixel
+SECS_P_PIXEL = 10  # how many seconds per pixel
 
-MAX_FUTURE = 9000   # 2.5 hours - how far into the future to show a prog
+MAX_FUTURE = 9000  # 2.5 hours - how far into the future to show a prog
 
 INPUT_FORM_ESCAPE_TABLE = {
-    '"': "&quot;"       ,
-    "'": "&apos;"       ,
+    '"': "&quot;",
+    "'": "&apos;",
 }
 
-
 URL_ESCAPE_TABLE = {
-    " ": "%20"          ,
+    " ": "%20",
 }
 
 TD_EMPTY_CELL = '<td>&nbsp;</td>'
 
 # state files, queues, logs and so on are stored in this directory
-CONTROL_DIR       = '/var/lib/tvh_epg'
+CONTROL_DIR = '/var/lib/tvh_epg'
 
 # the settings file is stored in the control directory
-SETTINGS_FILE     = 'tvh_epg_settings.ini'
-SETTINGS_SECTION  = 'user'
-
+SETTINGS_FILE = 'tvh_epg_settings.ini'
+SETTINGS_SECTION = 'user'
 
 TS_URL = 'ts_url'
 TS_USER = 'ts_user'
@@ -85,25 +80,29 @@ LOGODIR = 'logodir'
 TITLE = 'title'
 DFLT = 'default'
 # default values of the settings when being created
-SETTINGS_DEFAULTS = {   TS_URL  : { TITLE:  'URL of TV Headend Server',
-                                    DFLT:   'http://tvh.example.com:9981'
-                                  },
-                        TS_USER : { TITLE:  'Username on TVH server',
-                                    DFLT:   'ts_user'
-                                  },
-                        TS_PASS : { TITLE:  'Password on TVH server',
-                                    DFLT:   'ts_pass'
-                                  },
-                        SH_LOGO : { TITLE:  'Show Channel Logos',
-                                    DFLT:   '0'
-                                  },
-                        #LOGODIR : { TITLE:  'TV Logo Path',
-                        #            DFLT:   'TVLogos'
-                        #          },
-                    }
+SETTINGS_DEFAULTS = {
+    TS_URL: {
+        TITLE: 'URL of TV Headend Server',
+        DFLT: 'http://tvh.example.com:9981'
+    },
+    TS_USER: {
+        TITLE: 'Username on TVH server',
+        DFLT: 'ts_user'
+    },
+    TS_PASS: {
+        TITLE: 'Password on TVH server',
+        DFLT: 'ts_pass'
+    },
+    SH_LOGO: {
+        TITLE: 'Show Channel Logos',
+        DFLT: '0'
+    },
+    #LOGODIR : { TITLE:  'TV Logo Path',
+    #            DFLT:   'TVLogos'
+    #          },
+}
 
 DOCROOT_DEFAULT = '/home/hts'
-
 
 
 ##########################################################################################
@@ -131,11 +130,14 @@ Please do the following - needs root:
 \tsudo mkdir "%s" && sudo chgrp %s "%s" && sudo chmod g+ws "%s"''' \
 % (CONTROL_DIR, CONTROL_DIR, str(my_egroup_id), CONTROL_DIR, CONTROL_DIR)
         config_bad = -1
-        return(config_bad, error_text)       # error so severe, no point in continuing
+        return (config_bad,
+                error_text)  # error so severe, no point in continuing
 
     # owned by me and writable by me, or same group as me and writable through that group?
-    if ( (cdir_stat.st_uid == my_euser_id  and (cdir_stat.st_mode & stat.S_IWUSR) != 0)
-         or (cdir_stat.st_gid == my_egroup_id and (cdir_stat.st_mode & stat.S_IWGRP) != 0) ):
+    if ((cdir_stat.st_uid == my_euser_id and
+         (cdir_stat.st_mode & stat.S_IWUSR) != 0)
+            or (cdir_stat.st_gid == my_egroup_id and
+                (cdir_stat.st_mode & stat.S_IWGRP) != 0)):
         #print 'OK, %s exists and is writable' % CONTROL_DIR
         config_bad = 0
     else:
@@ -143,7 +145,7 @@ Please do the following - needs root:
 Please do the following:
 \tsudo chgrp %s "%s" && sudo chmod g+ws "%s"''' \
 % (CONTROL_DIR, str(my_egroup_id), CONTROL_DIR, CONTROL_DIR, )
-        return(-1, error_text)       # error so severe, no point in continuing
+        return (-1, error_text)  # error so severe, no point in continuing
 
     ########
     # verify the settings file exists and is writable
@@ -152,34 +154,33 @@ Please do the following:
 Please do the following - needs root:
 \tsudo touch "%s" && sudo chgrp %s "%s" && sudo chmod g+w "%s"''' \
 % (CONFIG_FILE_NAME, CONFIG_FILE_NAME, str(my_egroup_id), CONFIG_FILE_NAME, CONFIG_FILE_NAME)
-        return(-1, error_text)
+        return (-1, error_text)
 
     # owned by me and writable by me, or same group as me and writable through that group?
     config_stat = os.stat(CONFIG_FILE_NAME)
-    if ( ( config_stat.st_uid == my_euser_id  and (config_stat.st_mode & stat.S_IWUSR) != 0)
-         or ( config_stat.st_gid == my_egroup_id and (config_stat.st_mode & stat.S_IWGRP) != 0) ):
+    if ((config_stat.st_uid == my_euser_id and
+         (config_stat.st_mode & stat.S_IWUSR) != 0)
+            or (config_stat.st_gid == my_egroup_id and
+                (config_stat.st_mode & stat.S_IWGRP) != 0)):
         config_bad = 0
     else:
         error_text = '''Error, won\'t be able to write to file "%s"
 Please do the following - needs root:
 \tsudo chgrp %s "%s" && sudo chmod g+w %s''' \
 % (CONFIG_FILE_NAME, CONFIG_FILE_NAME, my_egroup_id, CONFIG_FILE_NAME, )
-        return(-1, error_text)
-
+        return (-1, error_text)
 
     # file is zero bytes?
     if config_stat.st_size == 0:
         error_text = 'Config file is empty, please go to settings and submit to save\n'
-        return(1, error_text)
-
+        return (1, error_text)
 
     if not MY_SETTINGS.read(CONFIG_FILE_NAME):
         error_text =('<b>Error</b>, failed to open and read config file "%s"' \
                      % (CONFIG_FILE_NAME, ))
-        return(-1, error_text)
+        return (-1, error_text)
 
-
-    return(0, 'OK')
+    return (0, 'OK')
 
 
 ##########################################################################################
@@ -209,7 +210,6 @@ def get_githash_self():
     sha_obj = hashlib.sha1()
     sha_obj.update(b'blob %d\0' % fullfile_stat.st_size)
     sha_obj.update(fullfile_content)
-
 
     return sha_obj.hexdigest()
 
@@ -244,6 +244,7 @@ def epoch_to_human_date(epoch_time):
 #    '''saves channel dict to cache file - FIXME'''
 #
 
+
 ##########################################################################################
 def get_channeltag_grid():
     '''gets the channeltag/grid values'''
@@ -251,9 +252,12 @@ def get_channeltag_grid():
     global MY_SETTINGS
 
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
-    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
-    ts_query = '%s/%s' % (ts_url, TS_URL_CTG, )
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
+    ts_query = '%s/%s' % (
+        ts_url,
+        TS_URL_CTG,
+    )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     print('<!-- get_dvr_config_grid URL %s -->' % (ts_query, ))
     ts_json = ts_response.json()
@@ -271,17 +275,20 @@ def get_channel_dict():
     global MY_SETTINGS
 
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
-    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
-    ts_query = '%s/%s?limit=400' % (ts_url, TS_URL_CHN, )
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
+    ts_query = '%s/%s?limit=400' % (
+        ts_url,
+        TS_URL_CHN,
+    )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     print('<!-- get_channel_dict URL %s -->' % (ts_query, ))
     ts_json = ts_response.json()
     #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
     #                                   indent=4, separators=(',', ': ')) )
 
-    channel_map = {}    # full channel info
-    channel_list = []   # build a list of channel names
+    channel_map = {}  # full channel info
+    channel_list = []  # build a list of channel names
     ordered_channel_map = collections.OrderedDict()
     if 'entries' in ts_json:
 
@@ -334,9 +341,12 @@ def get_dvr_config_grid():
     global MY_SETTINGS
 
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
-    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
-    ts_query = '%s/%s' % (ts_url, TS_URL_DCG, )
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
+    ts_query = '%s/%s' % (
+        ts_url,
+        TS_URL_DCG,
+    )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     print('<!-- get_dvr_config_grid URL %s -->' % (ts_query, ))
     ts_json = ts_response.json()
@@ -359,7 +369,6 @@ def html_page_footer():
 def input_form_escape(text):
     """escape special characters into html input forms"""
     return "".join(INPUT_FORM_ESCAPE_TABLE.get(c, c) for c in text)
-
 
 
 ##########################################################################################
@@ -387,8 +396,12 @@ def page_channels():
         print('  <form method="get" action="">')
         print("<b>Tag filters</b>:")
         for tag in channel_tag['entries']:
-            print('<input type="checkbox" name="tag" value="%s" />%s&nbsp;&nbsp;'
-                  % (tag['uuid'], tag['name'], ))
+            print(
+                '<input type="checkbox" name="tag" value="%s" />%s&nbsp;&nbsp;'
+                % (
+                    tag['uuid'],
+                    tag['name'],
+                ))
         print('''    <input type="hidden" name="page" value="channels" />
     <input type="submit" name="apply" value="apply" />
   </form>''')
@@ -416,16 +429,24 @@ def page_channels():
                 print('    <tr>')
                 if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
                     if 'icon_public_url' in channel_dict[ch_name]:
-                        chan_img_url = '%s%s' % (ts_url, chan['icon_public_url'], )
-                        print('<td class="chan_icon"><img width="12%%" height="12%%" '
-                              'src="%s" /></td>' % (chan_img_url,))
+                        chan_img_url = '%s%s' % (
+                            ts_url,
+                            chan['icon_public_url'],
+                        )
+                        print(
+                            '<td class="chan_icon"><img width="12%%" height="12%%" '
+                            'src="%s" /></td>' % (chan_img_url, ))
                     else:
                         print('<td>&nbsp;</td>')
 
                 play_url = '?page=m3u&amp;uuid=%s' % (chan['uuid'], )
                 print('''<td><a href="%s" download="tvheadend.m3u">%s</a></td>
           <td>%s</td>
-        </tr>''' % (play_url, ch_name, chan['number'], ))
+        </tr>''' % (
+                    play_url,
+                    ch_name,
+                    chan['number'],
+                ))
 
         print('</table>')
 
@@ -452,8 +473,12 @@ def page_epg():
         print('  <form method="get" action="">')
         print("<b>Tag filters</b>:")
         for tag in channel_tag['entries']:
-            print('<input type="checkbox" name="tag" value="%s" />%s&nbsp;&nbsp;'
-                  % (tag['uuid'], tag['name'], ))
+            print(
+                '<input type="checkbox" name="tag" value="%s" />%s&nbsp;&nbsp;'
+                % (
+                    tag['uuid'],
+                    tag['name'],
+                ))
         print('''    <input type="hidden" name="page" value="epg" />
     <input type="submit" name="apply" value="apply" />
   </form>''')
@@ -473,8 +498,8 @@ def page_epg():
 ''')
 
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-        ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
-        ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
+        ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
+        ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
 
         # iterate through the channel list by name
         for ch_name in channel_dict:
@@ -492,9 +517,14 @@ def page_epg():
                 #logodir = MY_SETTINGS.get(SETTINGS_SECTION, LOGODIR)
                 if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
                     if 'icon_public_url' in chan:
-                        chan_img_url = '%s%s' % (ts_url, chan['icon_public_url'], )
-                        print('<td width="100px" align="right" class="chan_icon">'
-                              '<img height="12%%" src="%s" /></td>' % (chan_img_url,))
+                        chan_img_url = '%s%s' % (
+                            ts_url,
+                            chan['icon_public_url'],
+                        )
+                        print(
+                            '<td width="100px" align="right" class="chan_icon">'
+                            '<img height="12%%" src="%s" /></td>' %
+                            (chan_img_url, ))
                     else:
                         print('<td>&nbsp;</td>')
 
@@ -504,14 +534,20 @@ def page_epg():
                       % (play_url, ch_name, chan['number']))
 
                 # grab the EPG data for the channel
-                ts_query = '%s/%s?limit=10&amp;channel=%s' % (ts_url, TS_URL_EPG, chan['uuid'], )
+                ts_query = '%s/%s?limit=10&amp;channel=%s' % (
+                    ts_url,
+                    TS_URL_EPG,
+                    chan['uuid'],
+                )
                 print('<!-- channel EPG URL %s -->' % (ts_query, ))
                 ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
                 ts_json = ts_response.json()
 
                 if len(ts_json['entries']):
                     #chan[EPG] = ts_json['entries']
-                    print('       <td valign="top" nowrap width="1600px"><div class="epg_row">')
+                    print(
+                        '       <td valign="top" nowrap width="1600px"><div class="epg_row">'
+                    )
 
                     entry_num = 0
                     for entry in ts_json['entries']:
@@ -540,37 +576,57 @@ def page_epg():
                                 time_left = time_stop - epoch_time
                                 box_width = time_left / SECS_P_PIXEL
                                 print('<div class="epg_now" style="width: '
-                                      '%dpx; max-width: %dpx">' % (box_width, box_width,) )
+                                      '%dpx; max-width: %dpx">' % (
+                                          box_width,
+                                          box_width,
+                                      ))
                             elif entry_num == 0:
                                 width_offset = time_offset / SECS_P_PIXEL
-                                print('<div class="epg_none" style="width: %dpx; '
-                                      'max-width: %dpx">%d</div>'
-                                      % (width_offset, width_offset, width_offset,) )
+                                print(
+                                    '<div class="epg_none" style="width: %dpx; '
+                                    'max-width: %dpx">%d</div>' % (
+                                        width_offset,
+                                        width_offset,
+                                        width_offset,
+                                    ))
                             else:
                                 print('<div class="epg_next" style="width: '
-                                      '%dpx; max-width: %dpx">' % (box_width, box_width,) )
+                                      '%dpx; max-width: %dpx">' % (
+                                          box_width,
+                                          box_width,
+                                      ))
                             # print the programme details
                             try:
-                                print('<a title="record this" href="?page=record&amp;event_id=%s"'
-                                      ' target="tvh_epg_record" width="320" height="320">'
-                                      '&amp;reg;</a>&nbsp;<b>%s</b><br />'
-                                      % (entry['eventId'], title, ))
-                                print('<div class="tooltip"><span class="tooltiptext">'
-                                      '%s</span>' % (summary, ))
+                                print(
+                                    '<a title="record this" href="?page=record&amp;event_id=%s"'
+                                    ' target="tvh_epg_record" width="320" height="320">'
+                                    '&amp;reg;</a>&nbsp;<b>%s</b><br />' % (
+                                        entry['eventId'],
+                                        title,
+                                    ))
+                                print(
+                                    '<div class="tooltip"><span class="tooltiptext">'
+                                    '%s</span>' % (summary, ))
                             except UnicodeEncodeError as uc_ex:
-                                print('EXCEPTION: "<i>%s - %s</i>"'
-                                      % (type(uc_ex).__name__, str(uc_ex), ), )
+                                print('EXCEPTION: "<i>%s - %s</i>"' % (
+                                    type(uc_ex).__name__,
+                                    str(uc_ex),
+                                ), )
 
                             if time_offset > 0:
                                 print('start %s<br />duration %s'            \
                                       % (epoch_to_human_duration(time_start), \
                                          secs_to_human(duration), ))
                             else:
-                                print('%s left of %s'
-                                      % (secs_to_human(time_left), secs_to_human(duration), ))
+                                print('%s left of %s' % (
+                                    secs_to_human(time_left),
+                                    secs_to_human(duration),
+                                ))
                             print('      </div></div>')
                             entry_num += 1
-                    print('<div style="clear:both; font-size:1px;"></div></div></td>')
+                    print(
+                        '<div style="clear:both; font-size:1px;"></div></div></td>'
+                    )
                 else:
                     print('      <td>&nbsp</td>')
                 print('    </tr>')
@@ -597,7 +653,11 @@ def page_m3u(p_uuid):
     global MY_SETTINGS
 
     print('#EXTM3U')
-    print('%s/%s/%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_URL), TS_URL_STR, p_uuid, ))
+    print('%s/%s/%s' % (
+        MY_SETTINGS.get(SETTINGS_SECTION, TS_URL),
+        TS_URL_STR,
+        p_uuid,
+    ))
 
 
 ##########################################################################################
@@ -618,11 +678,17 @@ def page_record(p_event_id, p_profile):
                 print('<input type="hidden" name="page" value="record" />')
                 print('<select name="profile">')
                 for entry in dcg_json['entries']:
-                    print('<option value=%s>profile: %s</p>' % (entry['uuid'], entry['profile'], ))
+                    print('<option value=%s>profile: %s</p>' % (
+                        entry['uuid'],
+                        entry['profile'],
+                    ))
                 print('</select>')
-                print('<input type="hidden" name="event_id" value="%s" />' % (p_event_id, ))
+                print('<input type="hidden" name="event_id" value="%s" />' %
+                      (p_event_id, ))
                 print('<input type="submit" name="Go" value="Go" />')
-                print('<input type="submit" name="Cancel" value="Cancel" onclick="self.close()" />')
+                print(
+                    '<input type="submit" name="Cancel" value="Cancel" onclick="self.close()" />'
+                )
                 print('</form method="get">')
             # if only one profile, just select it
             else:
@@ -635,8 +701,8 @@ def page_record(p_event_id, p_profile):
         print('<p>Work In Progress</p>')
 
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-        ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
-        ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
+        ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
+        ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
         ts_query = '%s/%s?config_uuid=%s&amp;event_id=%s' %    \
                   (ts_url, TS_URL_CBE, p_profile, p_event_id,)
         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
@@ -651,7 +717,9 @@ def page_record(p_event_id, p_profile):
         else:
             print('<p><b>Failed</b></p>')
         print('<input type="hidden" name="page" value="record" />')
-        print('<input type="submit" name="Close" value="Close" onclick="self.close()" />')
+        print(
+            '<input type="submit" name="Close" value="Close" onclick="self.close()" />'
+        )
         print('</form method="get">')
 
 
@@ -664,19 +732,25 @@ def page_recordings():
     print('<h1>Recordings</h1>')
 
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
-    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
-    ts_query = '%s/%s' % (ts_url, TS_URL_DEG,)
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
+    ts_query = '%s/%s' % (
+        ts_url,
+        TS_URL_DEG,
+    )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     print('<!-- status inputs URL %s -->' % (ts_query, ))
     if ts_response.status_code != 200:
         print('<p>HTTP error response %d'
-              '- does configured user have admin rights?</p>' % (ts_response.status_code, ) )
+              '- does configured user have admin rights?</p>' %
+              (ts_response.status_code, ))
         return
 
     ts_json = ts_response.json()
     if 'entries' in ts_json:
-        print('<table><tr><th>Channel Name</th><th>Title</th><th>Date</th><th>Summary</th></tr>')
+        print(
+            '<table><tr><th>Channel Name</th><th>Title</th><th>Date</th><th>Summary</th></tr>'
+        )
         for entry in ts_json['entries']:
             print('<tr>')
             if 'channelname' in entry:
@@ -706,8 +780,8 @@ def page_recordings():
             print('</tr>')
         print('</table>')
 
-    print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True,
-                                       indent=4, separators=(',', ': ')) )
+    print('<pre>%s</pre>' % json.dumps(
+        ts_json, sort_keys=True, indent=4, separators=(',', ': ')))
 
 
 #########################################################################################
@@ -719,14 +793,18 @@ def page_serverinfo():
     print('<h1>Server Info</h1>')
 
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
-    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
-    ts_query = '%s/%s' % (ts_url, TS_URL_SVI, )
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
+    ts_query = '%s/%s' % (
+        ts_url,
+        TS_URL_SVI,
+    )
     print('<!-- serverinfo URL %s -->' % (ts_query, ))
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     ts_json = ts_response.json()
 
-    print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, indent=4, separators=(',', ': ')) )
+    print('<pre>%s</pre>' % json.dumps(
+        ts_json, sort_keys=True, indent=4, separators=(',', ': ')))
 
 
 ##########################################################################################
@@ -755,7 +833,7 @@ def page_settings():
             try:
                 setting_value = str(MY_SETTINGS.get(SETTINGS_SECTION, setting))
             except configparser.NoOptionError:
-            #except configparser.NoOptionError as noex:
+                #except configparser.NoOptionError as noex:
                 #print('<p>Exception "%s"<br />' % (noex, ))
                 #print('failed getting value for setting "%s" from config, '
                 #      'using default</p>' % (SETTINGS_DEFAULTS[setting][TITLE], ))
@@ -780,7 +858,8 @@ def page_settings():
     for setting in sorted(SETTINGS_DEFAULTS):
         print('    <tr>')
         print('      <td align="right">%s&nbsp;&nbsp;</td>' % (setting, ))
-        print('      <td align="right">%s&nbsp;&nbsp;</td>' % (SETTINGS_DEFAULTS[setting][TITLE], ))
+        print('      <td align="right">%s&nbsp;&nbsp;</td>' %
+              (SETTINGS_DEFAULTS[setting][TITLE], ))
         print('      <td width="50%%"><input type="text" name="c_%s" '
               'value="%s" style="display:table-cell; width:100%%" /></td>' \
               % (setting, MY_SETTINGS.get(SETTINGS_SECTION, setting), ))
@@ -799,7 +878,8 @@ def page_settings():
     if config_file_handle:
         MY_SETTINGS.write(config_file_handle)
     else:
-        print('<b>Error</b>, failed to open and write config file "%s"' % (CONFIG_FILE_NAME, ))
+        print('<b>Error</b>, failed to open and write config file "%s"' %
+              (CONFIG_FILE_NAME, ))
 
 
 ##########################################################################################
@@ -812,51 +892,61 @@ def page_status():
 
     print('<h2>Input Status</h2>')
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER )
-    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS )
-    ts_query = '%s/%s' % (ts_url, TS_URL_STI,)
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
+    ts_query = '%s/%s' % (
+        ts_url,
+        TS_URL_STI,
+    )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     print('<!-- status inputs URL %s -->' % (ts_query, ))
     if ts_response.status_code == 200:
         ts_json = ts_response.json()
-        print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True,
-                                           indent=4, separators=(',', ': ')) )
+        print('<pre>%s</pre>' % json.dumps(
+            ts_json, sort_keys=True, indent=4, separators=(',', ': ')))
     else:
         print('<p>HTTP error response %d'
-              '- does configured user have admin rights?</p>' % (ts_response.status_code, ) )
+              '- does configured user have admin rights?</p>' %
+              (ts_response.status_code, ))
 
     print('<h2>Connection Status</h2>')
-    ts_query = '%s/%s' % (ts_url, TS_URL_STC,)
+    ts_query = '%s/%s' % (
+        ts_url,
+        TS_URL_STC,
+    )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     #print('<!-- status connections URL %s -->' % (ts_query, ))
     if ts_response.status_code == 200:
         ts_json = ts_response.json()
-        print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True,
-                                           indent=4, separators=(',', ': ')) )
+        print('<pre>%s</pre>' % json.dumps(
+            ts_json, sort_keys=True, indent=4, separators=(',', ': ')))
     else:
         print('<p>HTTP error response %d'
-              '- does configured user have admin rights?</p>' % (ts_response.status_code, ) )
+              '- does configured user have admin rights?</p>' %
+              (ts_response.status_code, ))
 
 
 ##########################################################################################
 def page_upgrade_check():
     '''the upgrade check page'''
 
-
     ################################################
     # see if this script is up to date
-    githash_self           = get_githash_self()
-    githubhash_self        = get_github_hash_self()
+    githash_self = get_githash_self()
+    githubhash_self = get_github_hash_self()
 
     print('<p>github hash of this file %s<br />\n' % (githubhash_self, ))
     print('git hash of this file %s<br />\n' % (githash_self, ))
 
     print('<p>')
     if githubhash_self == githash_self:
-        print('Great, this program is the same as the version on github.\n<br />\n')
+        print(
+            'Great, this program is the same as the version on github.\n<br />\n'
+        )
     else:
-        print('This program appears to be out of date, please update it.\n<br />\n')
-
+        print(
+            'This program appears to be out of date, please update it.\n<br />\n'
+        )
 
     print('</p>')
 
@@ -871,7 +961,6 @@ def m3u_page_header():
 ##########################################################################################
 def html_page_header():
     '''standard html page header'''
-
 
     #print('Content-Type: text/plain\n')                # plain text for extreme debugging
     print('Content-Type: text/html; charset=utf-8\n')
@@ -970,7 +1059,6 @@ def html_page_header():
     print('<a href="/python_errors/?C=M;O=A" target="_new">'
           '/python_errors (new window)</a><br /><br />')
 
-
     print('''
 <b>Menu:</b>&nbsp;<a href="?page=epg">EPG</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=channels">Channels</a>&nbsp;&nbsp;&nbsp;
@@ -980,6 +1068,7 @@ def html_page_header():
 <a href="?page=status">Status</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=upgrade_check">Upgrade Check</a>&nbsp;&nbsp;&nbsp;
 ''')
+
 
 ##########################################################################################
 def secs_to_human(t_secs):
@@ -993,7 +1082,7 @@ def secs_to_human(t_secs):
     r_days = t_days
 
     r_hours = t_hours - r_days * 24
-    r_mins = t_mins - r_days * 24 * 60      - r_hours * 60
+    r_mins = t_mins - r_days * 24 * 60 - r_hours * 60
     #r_secs = t_secs - r_days * 24 * 60 * 60 - r_hours * 60 * 60 - r_mins * 60
 
     h_days = ''
@@ -1001,7 +1090,11 @@ def secs_to_human(t_secs):
         h_days = '%dd, ' % r_days
 
     #h_time = '%s%02d:%02d:%02d' % (h_days, r_hours, r_mins, r_secs, )
-    h_time = '%s%02d:%02d' % (h_days, r_hours, r_mins, )
+    h_time = '%s%02d:%02d' % (
+        h_days,
+        r_hours,
+        r_mins,
+    )
 
     return h_time
 
@@ -1028,7 +1121,6 @@ def web_interface():
         p_profile = CGI_PARAMS.getvalue('profile')
     else:
         p_profile = ''
-
 
     #illegal_param_count = 0
     error_text = 'Unknown error'
@@ -1097,7 +1189,6 @@ def web_interface():
         #illegal_param_count += 1
 
 
-
 ##########################################################################################
 # main
 
@@ -1117,6 +1208,5 @@ if len(sys.argv) <= 1:
 else:
     print('Failed')
     exit(1)
-
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
