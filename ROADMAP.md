@@ -10,6 +10,9 @@
 
 ## Done - in reverse order
 
+20181216
+* fixed the API calls which got broke when I previously made the HTML more W3C compliant
+
 20181015
 * added upgrade check
 
