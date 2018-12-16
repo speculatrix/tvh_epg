@@ -534,13 +534,14 @@ def page_epg():
                       % (play_url, ch_name, chan['number']))
 
                 # grab the EPG data for the channel
-                ts_query = '%s/%s?limit=10&amp;channel=%s' % (
+                ts_query = '%s/%s?limit=10&channel=%s' % (
                     ts_url,
                     TS_URL_EPG,
                     chan['uuid'],
                 )
                 print('<!-- channel EPG URL %s -->' % (ts_query, ))
                 ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+                print('<!-- requests.response code %d -->' % (ts_response.status_code, ))
                 ts_json = ts_response.json()
 
                 if len(ts_json['entries']):
@@ -600,7 +601,7 @@ def page_epg():
                                 print(
                                     '<a title="record this" href="?page=record&amp;event_id=%s"'
                                     ' target="tvh_epg_record" width="320" height="320">'
-                                    '&amp;reg;</a>&nbsp;<b>%s</b><br />' % (
+                                    '&reg;</a>&nbsp;<b>%s</b><br />' % (
                                         entry['eventId'],
                                         title,
                                     ))
@@ -703,7 +704,7 @@ def page_record(p_event_id, p_profile):
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
         ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
         ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
-        ts_query = '%s/%s?config_uuid=%s&amp;event_id=%s' %    \
+        ts_query = '%s/%s?config_uuid=%s&event_id=%s' %    \
                   (ts_url, TS_URL_CBE, p_profile, p_event_id,)
         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
         print('<!-- page_record CBE URL %s -->' % (ts_url, ))
