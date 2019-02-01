@@ -2,11 +2,18 @@
 
 ## TBD
 
-* create a proper now/next view timeline
+* put an authentication token into the URL so VLC can play without
+  requiring a username/password to be entered.
+* improve the what's on now so it doesn't get squashed too thin
 * save a cache of channel information
 * make display more attractive
 * add a filter feature, to exclude or only include channels
 * channel tag filters should be preserved when you submit
+* add username/password function which gets passed to TVH, so
+  recordings are owned by the right person, and settings can be
+  saved per person
+* some sort of TV region filter
+
 
 ## Done - in reverse order
 
