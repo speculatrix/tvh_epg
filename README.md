@@ -1,5 +1,6 @@
 # tvh_epg
 
+## overview
 This is the early days for this project, at the moment it's
 just a basic now/next electronic program guide and recordings
 list for TVHeaded.
@@ -7,6 +8,10 @@ list for TVHeaded.
 It's a simple python3 cgi-bin program which grabs channel, EPG or
 recordings data from a TVHeadEnd server and presents it in a grid
 form, with a link to click to play the channel.
+
+This cgi-bin program runs independently of the TV Headend server,
+it can run on the same machine (but in, say, Apache) or a different
+one.
 
 I expect to add more features to make it more useful... I'd be
 grateful for any help I can get! See the ROADMAP for plans and
