@@ -661,7 +661,7 @@ def page_m3u(p_uuid):
     if TS_PAUTH in MY_SETTINGS[SETTINGS_SECTION]:
         ts_pauth = '?AUTH=%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_PAUTH), )
     else:
-        ts_pauth = '?foobar'
+        ts_pauth = ''
 
     print('#EXTM3U')
     print('%s/%s/%s%s' % (
