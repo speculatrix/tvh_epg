@@ -75,6 +75,7 @@ SETTINGS_SECTION = 'user'
 TS_URL = 'ts_url'
 TS_USER = 'ts_user'
 TS_PASS = 'ts_pass'
+TS_PAUTH = 'ts_pauth'
 SH_LOGO = 'sh_ch_logo'
 LOGODIR = 'logodir'
 TITLE = 'title'
@@ -83,19 +84,23 @@ DFLT = 'default'
 SETTINGS_DEFAULTS = {
     TS_URL: {
         TITLE: 'URL of TV Headend Server',
-        DFLT: 'http://tvh.example.com:9981'
+        DFLT: 'http://tvh.example.com:9981',
     },
     TS_USER: {
         TITLE: 'Username on TVH server',
-        DFLT: 'ts_user'
+        DFLT: TS_USER,
     },
     TS_PASS: {
         TITLE: 'Password on TVH server',
-        DFLT: 'ts_pass'
+        DFLT: TS_PASS,
+    },
+    TS_PAUTH: {
+        TITLE: 'Persistent Auth Token',
+        DFLT: TS_PAUTH,
     },
     SH_LOGO: {
         TITLE: 'Show Channel Logos',
-        DFLT: '0'
+        DFLT: '0',
     },
     #LOGODIR : { TITLE:  'TV Logo Path',
     #            DFLT:   'TVLogos'
@@ -653,11 +658,17 @@ def page_m3u(p_uuid):
 
     global MY_SETTINGS
 
+    if TS_PAUTH in MY_SETTINGS[SETTINGS_SECTION]:
+        ts_pauth = '?AUTH=%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_PAUTH), )
+    else:
+        ts_pauth = '?foobar'
+
     print('#EXTM3U')
-    print('%s/%s/%s' % (
+    print('%s/%s/%s%s' % (
         MY_SETTINGS.get(SETTINGS_SECTION, TS_URL),
         TS_URL_STR,
         p_uuid,
+        ts_pauth,
     ))
 
 
@@ -861,9 +872,14 @@ def page_settings():
         print('      <td align="right">%s&nbsp;&nbsp;</td>' % (setting, ))
         print('      <td align="right">%s&nbsp;&nbsp;</td>' %
               (SETTINGS_DEFAULTS[setting][TITLE], ))
+        if setting in MY_SETTINGS[SETTINGS_SECTION]:
+            setting_value = MY_SETTINGS.get(SETTINGS_SECTION, setting)
+        else:
+            setting_value = SETTINGS_DEFAULTS[setting][DFLT]
+
         print('      <td width="50%%"><input type="text" name="c_%s" '
               'value="%s" style="display:table-cell; width:100%%" /></td>' \
-              % (setting, MY_SETTINGS.get(SETTINGS_SECTION, setting), ))
+              % (setting, setting_value, ))
         print('      <td>&nbsp;%s</td>' % (SETTINGS_DEFAULTS[setting][DFLT], ))
         print('    </tr>')
 
