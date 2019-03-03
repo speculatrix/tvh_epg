@@ -2,20 +2,27 @@
 
 ## TBD
 
-* put an authentication token into the URL so VLC can play without
-  requiring a username/password to be entered.
+* add font and scale settings so you can tune the UI to your screen size
 * improve the what's on now so it doesn't get squashed too thin
 * save a cache of channel information
 * make display more attractive
+
 * add a filter feature, to exclude or only include channels
 * channel tag filters should be preserved when you submit
+* some sort of TV region filter
+* some soft of search feature which can search title, sub title etc
+
 * add username/password function which gets passed to TVH, so
   recordings are owned by the right person, and settings can be
   saved per person
-* some sort of TV region filter
+* make the persistent auth feature dynamic rather than manually set
+* make password fields write-only
 
 
 ## Done - in reverse order
+
+20190303
+* allow for persistent auth token to prevent having to put a username/password into the media player
 
 20181216
 * fixed the API calls which got broke when I previously made the HTML more W3C compliant
