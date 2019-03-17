@@ -8,7 +8,6 @@
 * make display more attractive
 
 * add a filter feature, to exclude or only include channels
-* channel tag filters should be preserved when you submit
 * some sort of TV region filter
 * some soft of search feature which can search title, sub title etc
 
@@ -22,6 +21,8 @@
 ## Done - in reverse order
 
 20190303
+* added automatic refresh
+* channel tag filters are preserved
 * allow for persistent auth token to prevent having to put a username/password into the media player
 
 20181216
