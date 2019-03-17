@@ -264,9 +264,12 @@ def get_channeltag_grid():
         TS_URL_CTG,
     )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
-    print('<!-- get_dvr_config_grid URL %s -->' % (ts_query, ))
-    ts_json = ts_response.json()
+    print('<!-- get_channeltag_grid URL %s -->' % (ts_query, ))
+    if ts_response.status_code != 200:
+        print('<pre>Error code %d\n%s</pre>' % (ts_response.status_code, ts_response.content, ))
+        return {}
 
+    ts_json = ts_response.json()
     #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
     #                                   indent=4, separators=(',', ': ')) )
 
@@ -288,6 +291,10 @@ def get_channel_dict():
     )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     print('<!-- get_channel_dict URL %s -->' % (ts_query, ))
+    if ts_response.status_code != 200:
+        print('<pre>Error code %d\n%s</pre>' % (ts_response.status_code, ts_response.content, ))
+        return {}
+
     ts_json = ts_response.json()
     #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
     #                                   indent=4, separators=(',', ': ')) )
@@ -401,10 +408,15 @@ def page_channels():
         print('  <form method="get" action="">')
         print("<b>Tag filters</b>:")
         for tag in channel_tag['entries']:
+            if tag['uuid'] in p_tag:
+                checked = ' checked'
+            else:
+                checked = ''
             print(
-                '<input type="checkbox" name="tag" value="%s" />%s&nbsp;&nbsp;'
+                '<input type="checkbox" name="tag" value="%s" %s/>%s&nbsp;&nbsp;'
                 % (
                     tag['uuid'],
+                    checked,
                     tag['name'],
                 ))
         print('''    <input type="hidden" name="page" value="channels" />
@@ -478,10 +490,15 @@ def page_epg():
         print('  <form method="get" action="">')
         print("<b>Tag filters</b>:")
         for tag in channel_tag['entries']:
+            if tag['uuid'] in p_tag:
+                checked = ' checked'
+            else:
+                checked = ''
             print(
-                '<input type="checkbox" name="tag" value="%s" />%s&nbsp;&nbsp;'
+                '<input type="checkbox" name="tag" value="%s" %s/>%s&nbsp;&nbsp;'
                 % (
                     tag['uuid'],
+                    checked,
                     tag['name'],
                 ))
         print('''    <input type="hidden" name="page" value="epg" />
@@ -989,7 +1006,10 @@ def html_page_header():
 <html>
   <head>
     <title>TVH EPG</title>
+    <meta http-equiv="refresh" content="600;" />
+
     <style type="text/css">
+    print('<meta charset="utf-8"/>')
 
     table {
         border-collapse: collapse;
@@ -1155,6 +1175,12 @@ def web_interface():
 
     if p_page == EPG:
         html_page_header()
+
+        #for a in os.environ:
+        #    print("<p>%s = %s</p>" % (a, os.getenv(a)) )
+        #for headername, headervalue in os.environ.iteritems():
+            #if headername.startswith("HTTP_"):
+            #print("<p>%s = %s</p>" % (headername, headervalue, ) )
 
         page_epg()
         html_page_footer()
