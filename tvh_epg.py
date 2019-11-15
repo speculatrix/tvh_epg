@@ -91,7 +91,7 @@ DFLT = 'default'
 SETTINGS_DEFAULTS = {
     TS_URL: {
         TITLE: 'URL of TV Headend Server',
-        DFLT: 'http://tvh.example.com:9981',
+        DFLT: 'http://192.168.1.2:9981',
     },
     TS_USER: {
         TITLE: 'Username on TVH server',
@@ -466,7 +466,7 @@ def page_channels():
                 play_url = '?page=m3u&amp;uuid=%s' % (chan['uuid'], )
                 print('<td><a href="%s" download="tvheadend.m3u">%s</a>' % ( play_url, chan_name, ))
                 if CAST_SUPPORT:
-                    print('<br /><a href="?page=chromecast&uri=/%s/%s">cast %s</a>' % (TS_URL_STR, chan['uuid'], chan_name, ))
+                    print('<br /><a href="?page=chromecast&uri=/%s/%s">=&gt;&gt;cast</a>' % (TS_URL_STR, chan['uuid'], ))
 
                 print('</td>\n      <td>%s</td>\n        </tr>' % (chan['number'], ))
 
@@ -484,6 +484,8 @@ def page_chromecast(p_uri, p_cast_device):
     global MY_SETTINGS
 
     chromecasts = pychromecast.get_chromecasts()
+
+    print("<p>Please be patient, scanning for chromecast devices can take up to ten seconds</p>")
 
     # user must choose a device to cast to
     if p_cast_device == '':
@@ -510,9 +512,9 @@ def page_chromecast(p_uri, p_cast_device):
 
 
     print('uri "%s"<br />' % (p_uri, ))
-    full_url = 'http://192.168.29.32:9981%s?AUTH=PlJ4Q193YL9y6ooeNJWiTwriVX5s&profile=chromecast' % p_uri
+    full_url = '%s%s?AUTH=PlJ4Q193YL9y6ooeNJWiTwriVX5s&profile=chromecast' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_URL), p_uri)
     print('fullurl is "%s"<br />' % full_url)
-    return
+    #return
     
     cast.wait()
     print('<pre')
@@ -520,10 +522,8 @@ def page_chromecast(p_uri, p_cast_device):
     print(cast.status)
 
     mc = cast.media_controller
-    #mc.play_media('http://192.168.29.32/BigBuckBunny.mp4', 'video/mp4')
-    mc.play_media('http://192.168.29.32:9981%s?AUTH=PlJ4Q193YL9y6ooeNJWiTwriVX5s&profile=chromecast' % p_uri, 'video/mp4')
+    mc.play_media(full_url,  'video/mp4')
 
-    #mc.play_media('http://tvh.home.mansfield.co.uk:9981/stream/channel/c970f91eef056be90f5f4bbc1e0c70d6?ticket=50e0464381a3f17973aa0759bc516a1b43108a0a&profile=chromecast', 'video/mp4')
     mc.block_until_active()
     print(mc.status)
     mc.pause()
@@ -965,12 +965,13 @@ def page_settings():
         print('    </tr>')
 
     print('''    <tr>
-      <td align="center"><input type="reset" value="revert"></td>
-      <td align="center"><input type="submit" name="submit" value="submit" /></td>
-      <td></td>
+      <td align="center" colspan="2"><input type="reset" value="revert"></td>
+      <td align="center" colspan="2"><input type="submit" name="submit" value="submit" /></td>
     </tr>
   </table>
-  </form>''')
+  </form><br /><br/>
+Note that the URL for the TVHeadend server MUST be resolvable from the outside world because chromecast devices go direct to Google for DNS and will not be able to resolve hostname in private DNS... therefore consider using the IP address.
+''')
 
     config_file_handle = open(CONFIG_FILE_NAME, 'w')
     if config_file_handle:
@@ -1168,9 +1169,8 @@ def html_page_header():
 <a href="?page=settings">Settings</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=status">Status</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=upgrade_check">Upgrade Check</a>&nbsp;&nbsp;&nbsp;
+<a href="https://github.com/speculatrix/tvh_epg/blob/master/README.md" target=_new>About</a> (new window)&nbsp;&nbsp;&nbsp;
 ''')
-    if CAST_SUPPORT:
-        print('<a href="?page=chromecast">Chromecast</a>&nbsp;&nbsp;&nbsp;')
 
 
 ##########################################################################################
