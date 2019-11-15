@@ -36,7 +36,7 @@ some support for chromecast is being developed, see <a href="CHROMECAST.md">CHRO
 See <a href="ROADMAP.md">ROADMAP.md</a>
 
 
-### Screenshots
+## Screenshots
 
 <img src="https://raw.githubusercontent.com/speculatrix/tvh_epg/master/Screenshot_20181006_160730.png" />
 
