@@ -38,7 +38,7 @@ See <a href="ROADMAP.md">ROADMAP.md</a>
 
 ## Screenshots
 
-<img src="https://raw.githubusercontent.com/speculatrix/tvh_epg/master/Screenshot_20181006_160730.png" />
+<img src="https://raw.githubusercontent.com/speculatrix/tvh_epg/master/epg_sample.png" />
 
 
 ## Acknowledgement and thanks

@@ -80,11 +80,11 @@ SETTINGS_FILE = 'tvh_epg_settings.ini'
 SETTINGS_SECTION = 'user'
 
 TS_URL = 'ts_url'
+TS_URL_ICONS = 'ts_url_icons'
 TS_USER = 'ts_user'
 TS_PASS = 'ts_pass'
 TS_PAUTH = 'ts_pauth'
 SH_LOGO = 'sh_ch_logo'
-LOGODIR = 'logodir'
 TITLE = 'title'
 DFLT = 'default'
 # default values of the settings when being created
@@ -92,6 +92,10 @@ SETTINGS_DEFAULTS = {
     TS_URL: {
         TITLE: 'URL of TV Headend Server',
         DFLT: 'http://192.168.1.2:9981',
+    },
+    TS_URL_ICONS: {
+        TITLE: 'URL to picons',
+        DFLT: 'http://192.168.1.2/TVLogos/',
     },
     TS_USER: {
         TITLE: 'Username on TVH server',
@@ -109,9 +113,6 @@ SETTINGS_DEFAULTS = {
         TITLE: 'Show Channel Logos',
         DFLT: '0',
     },
-    #LOGODIR : { TITLE:  'TV Logo Path',
-    #            DFLT:   'TVLogos'
-    #          },
 }
 
 DOCROOT_DEFAULT = '/home/hts'
@@ -411,6 +412,7 @@ def page_channels():
 <p>Note, the links are the streams, open in VLC
 - you can drag and drop the link into a VLC window</p>''' % (cdl, ))
 
+    # channel labels
     if cdl:
         print('  <form method="get" action="">')
         print("<b>Tag filters</b>:")
@@ -430,6 +432,10 @@ def page_channels():
     <input type="submit" name="apply" value="apply" />
   </form>''')
 
+
+        #####################################################################
+        # channel table
+
         print('''  <table>
     <tr>''')
         if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
@@ -439,6 +445,7 @@ def page_channels():
     </tr>
 ''')
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+        icon_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_ICONS)
         for chan_name in channel_dict:
             chan = channel_dict[chan_name]
             show_channel = 0
@@ -453,13 +460,16 @@ def page_channels():
                 print('    <tr>')
                 if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
                     if 'icon_public_url' in channel_dict[chan_name]:
-                        chan_img_url = '%s%s' % (
-                            ts_url,
-                            chan['icon_public_url'],
-                        )
+                        # chop +1 channel names for icons
+                        if chan_name[-2:] == '+1':
+                            chan_name_ref = chan_name[:-2]
+                        else:
+                            chan_name_ref = chan_name
+                        chan_img_url = '%s/%s.png' % ( icon_url, chan_name_ref, )
                         print(
-                            '<td class="chan_icon"><img width="12%%" height="12%%" '
-                            'src="%s" /></td>' % (chan_img_url, ))
+                            '<td width="100px" align="right" class="chan_icon">'
+                            '<img height="12%%" src="%s" /></td>' %
+                            (chan_img_url, ))
                     else:
                         print('<td>&nbsp;</td>')
 
@@ -584,6 +594,7 @@ def page_epg():
 ''')
 
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+        icon_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_ICONS)
         ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
         ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
 
@@ -600,13 +611,14 @@ def page_epg():
 
             if show_channel:
                 print('    <tr>')
-                #logodir = MY_SETTINGS.get(SETTINGS_SECTION, LOGODIR)
                 if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
                     if 'icon_public_url' in chan:
-                        chan_img_url = '%s%s' % (
-                            ts_url,
-                            chan['icon_public_url'],
-                        )
+                        # chop +1 channel names for icons
+                        if chan_name[-2:] == '+1':
+                            chan_name_ref = chan_name[:-2]
+                        else:
+                            chan_name_ref = chan_name
+                        chan_img_url = '%s/%s.png' % ( icon_url, chan_name_ref, )
                         print(
                             '<td width="100px" align="right" class="chan_icon">'
                             '<img height="12%%" src="%s" /></td>' %
