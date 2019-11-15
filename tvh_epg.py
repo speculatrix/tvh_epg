@@ -616,8 +616,12 @@ def page_epg():
 
                 play_url = '?page=m3u&amp;uuid=%s' % (chan['uuid'], )
                 print('      <td width="100px" align="right"><a href="%s" '
-                      'download="tvheadend.m3u">%s</a> <br />%d</td>' \
+                      'download="tvheadend.m3u">%s</a> <br />%d' \
                       % (play_url, chan_name, chan['number']))
+                if CAST_SUPPORT:
+                    print('<br /><a href="?page=chromecast&uri=/%s/%s">=&gt;&gt;cast</a>' % (TS_URL_STR, chan['uuid'], ))
+                print('</td>')
+
 
                 # grab the EPG data for the channel
                 ts_query = '%s/%s?limit=10&channel=%s' % (
@@ -1248,7 +1252,6 @@ def web_interface():
     else:   # set the default page if none provided
         #p_page = 'error'
         p_page = EPG
-        p_page = 'chromecast'   # cli testing of chromecast page
 
     if p_page == EPG:
         html_page_header()
