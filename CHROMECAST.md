@@ -5,12 +5,21 @@ This is the barest details of how to proceed. These instructions will be improve
 
 ## Persistent Auth Token
 
-you need to create a user with a persistent authentication token, and put that into the settings.
+You need to create a user with a persistent authentication token, and put that into the settings.
 
 
 ## Install pychromecast library
 
-you need to git clone the pychromecast repo and copy the subdirectory pychromecast to the place where you put the tvh_epg.py CGI script. If the tvh_epg.py script can't import pychromecast then you won't see the link against the channel list to cast it.
+you need to git clone the <a href="https://github.com/balloob/pychromecast">pychromecast repo</a> and copy the subdirectory pychromecast to the place where you put the tvh_epg.py CGI script. If the tvh_epg.py script can't import pychromecast then you won't see the link against the channel list to cast it.
+
+Suppose the tvh_epg.py script is in /usr/lib/cgi-bin, then do this:
+```
+cd /tmp
+git clone https://github.com/balloob/pychromecast.git
+cd pychromecast
+rsync -au pychromecast /usr/lib/cgi-bin
+```
+
 
 
 ## Streaming Profile
