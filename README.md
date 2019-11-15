@@ -27,6 +27,9 @@ changes.
 * if you want channel icons, put them into a directory called TVLogos under the document root
 ** You can get FreeSat icons from https://github.com/Elky666/TVLogos
 
+## chromecast
+
+some support for chromecast is being developed, see <a href="CHROMECAST.md">CHROMECAST.md</a>
 
 ## roadmap
 

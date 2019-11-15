@@ -5,6 +5,7 @@
 * add font and scale settings so you can tune the UI to your screen size
 * improve the what's on now so it doesn't get squashed too thin
 * save a cache of channel information
+* allow a different URL for 
 * make display more attractive
 
 * add a filter feature, to exclude or only include channels
@@ -15,10 +16,14 @@
   recordings are owned by the right person, and settings can be
   saved per person
 * make the persistent auth feature dynamic rather than manually set
-* make password fields write-only
+* make password fields write-only, or hide them in some way?
 
 
 ## Done - in reverse order
+
+20191114
+* first cut of a version which can send streams to chromecast;
+  uses https://github.com/balloob/pychromecast
 
 20190303
 * added automatic refresh
