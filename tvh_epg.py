@@ -19,6 +19,13 @@ import time
 import collections
 import requests
 
+try:
+    import pychromecast
+    CAST_SUPPORT = True
+except ImportError:
+    CAST_SUPPORT = False
+
+
 # requires making code less readable:
 # pylint:disable=bad-whitespace
 # pylint:disable=too-many-branches
@@ -432,8 +439,8 @@ def page_channels():
     </tr>
 ''')
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-        for ch_name in channel_dict:
-            chan = channel_dict[ch_name]
+        for chan_name in channel_dict:
+            chan = channel_dict[chan_name]
             show_channel = 0
             if 'tags' not in chan or len(p_tag) == 0:
                 show_channel = 1
@@ -445,7 +452,7 @@ def page_channels():
             if show_channel:
                 print('    <tr>')
                 if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
-                    if 'icon_public_url' in channel_dict[ch_name]:
+                    if 'icon_public_url' in channel_dict[chan_name]:
                         chan_img_url = '%s%s' % (
                             ts_url,
                             chan['icon_public_url'],
@@ -457,15 +464,72 @@ def page_channels():
                         print('<td>&nbsp;</td>')
 
                 play_url = '?page=m3u&amp;uuid=%s' % (chan['uuid'], )
-                print('''<td><a href="%s" download="tvheadend.m3u">%s</a></td>
-          <td>%s</td>
-        </tr>''' % (
-                    play_url,
-                    ch_name,
-                    chan['number'],
-                ))
+                print('<td><a href="%s" download="tvheadend.m3u">%s</a>' % ( play_url, chan_name, ))
+                if CAST_SUPPORT:
+                    print('<br /><a href="?page=chromecast&uri=/%s/%s">cast %s</a>' % (TS_URL_STR, chan['uuid'], chan_name, ))
+
+                print('</td>\n      <td>%s</td>\n        </tr>' % (chan['number'], ))
 
         print('</table>')
+
+
+##########################################################################################
+def page_chromecast(p_uri, p_cast_device):
+    '''chromecast "pop up"
+        uri is /dvrfile/aaaaaaa...
+            or /stream/channel/aaaaaa
+        and missing the httpX://hostname:port bit
+    '''
+
+    global MY_SETTINGS
+
+    chromecasts = pychromecast.get_chromecasts()
+
+    # user must choose a device to cast to
+    if p_cast_device == '':
+        print('<form method="get" action="">\n'
+              '<input type="hidden" name="page" value="chromecast" />\n'
+              '<input type="hidden" name="uri" value="%s" />' % (p_uri, ))
+        print('Select device')
+        print('<select name="cast_device">')
+
+        for cc in chromecasts:
+            print ('<option value="%s">%s</option>' % (cc.device.friendly_name, cc.device.friendly_name, ))
+        print('</select>\n<input type="submit" name="Choose Device" value="Choose Device">\n</form>')
+        return
+
+    # find the cast device which user chose from friendly name
+    print('<br />Debug, finding device with friendly name "%s"<br />' % (p_cast_device, ))
+    cast = None
+    for cc in chromecasts:
+        if cc.device.friendly_name == p_cast_device:
+            cast = cc
+    if cast is None:
+        print('Error, couldn\'t find the cast device<br />')
+        return
+
+
+    print('uri "%s"<br />' % (p_uri, ))
+    full_url = 'http://192.168.29.32:9981%s?AUTH=PlJ4Q193YL9y6ooeNJWiTwriVX5s&profile=chromecast' % p_uri
+    print('fullurl is "%s"<br />' % full_url)
+    return
+    
+    cast.wait()
+    print('<pre')
+    print(cast.device)
+    print(cast.status)
+
+    mc = cast.media_controller
+    #mc.play_media('http://192.168.29.32/BigBuckBunny.mp4', 'video/mp4')
+    mc.play_media('http://192.168.29.32:9981%s?AUTH=PlJ4Q193YL9y6ooeNJWiTwriVX5s&profile=chromecast' % p_uri, 'video/mp4')
+
+    #mc.play_media('http://tvh.home.mansfield.co.uk:9981/stream/channel/c970f91eef056be90f5f4bbc1e0c70d6?ticket=50e0464381a3f17973aa0759bc516a1b43108a0a&profile=chromecast', 'video/mp4')
+    mc.block_until_active()
+    print(mc.status)
+    mc.pause()
+    time.sleep(5)
+    mc.play()
+    print('</pre')
 
 
 ##########################################################################################
@@ -524,8 +588,8 @@ def page_epg():
         ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
 
         # iterate through the channel list by name
-        for ch_name in channel_dict:
-            chan = channel_dict[ch_name]
+        for chan_name in channel_dict:
+            chan = channel_dict[chan_name]
             show_channel = 0
             if 'tags' not in chan or len(p_tag) == 0:
                 show_channel = 1
@@ -553,7 +617,7 @@ def page_epg():
                 play_url = '?page=m3u&amp;uuid=%s' % (chan['uuid'], )
                 print('      <td width="100px" align="right"><a href="%s" '
                       'download="tvheadend.m3u">%s</a> <br />%d</td>' \
-                      % (play_url, ch_name, chan['number']))
+                      % (play_url, chan_name, chan['number']))
 
                 # grab the EPG data for the channel
                 ts_query = '%s/%s?limit=10&channel=%s' % (
@@ -1105,6 +1169,8 @@ def html_page_header():
 <a href="?page=status">Status</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=upgrade_check">Upgrade Check</a>&nbsp;&nbsp;&nbsp;
 ''')
+    if CAST_SUPPORT:
+        print('<a href="?page=chromecast">Chromecast</a>&nbsp;&nbsp;&nbsp;')
 
 
 ##########################################################################################
@@ -1159,6 +1225,17 @@ def web_interface():
     else:
         p_profile = ''
 
+    if 'uri' in CGI_PARAMS:
+        p_uri = CGI_PARAMS.getvalue('uri')
+    else:
+        p_uri = ''
+
+    if 'cast_device' in CGI_PARAMS:
+        p_cast_device = CGI_PARAMS.getvalue('cast_device')
+    else:
+        p_cast_device = ''
+
+
     #illegal_param_count = 0
     error_text = 'Unknown error'
     (config_bad, error_text) = check_load_config_file()
@@ -1168,10 +1245,10 @@ def web_interface():
     #    p_page = 'settings'
     elif 'page' in CGI_PARAMS:
         p_page = CGI_PARAMS.getvalue('page')
-    else:
-        p_page = ''
+    else:   # set the default page if none provided
         #p_page = 'error'
         p_page = EPG
+        p_page = 'chromecast'   # cli testing of chromecast page
 
     if p_page == EPG:
         html_page_header()
@@ -1191,6 +1268,10 @@ def web_interface():
     elif p_page == 'channels':
         html_page_header()
         page_channels()
+        html_page_footer()
+    elif CAST_SUPPORT and p_page == 'chromecast':
+        html_page_header()
+        page_chromecast(p_uri, p_cast_device)
         html_page_footer()
     elif p_page == 'm3u':
         if 'uuid' in CGI_PARAMS:
