@@ -43,10 +43,16 @@ See <a href="ROADMAP.md">ROADMAP.md</a>
 This program only exists because of the awesome developers working on
 https://tvheadend.org
 
+And also big thanks to Paulus Schoutsen (<a href="https://github.com/balloob">balloob</a>) for pychromecast
+
 
 ## Useful links
+
+https://github.com/balloob/pychromecast - the library used for chromecast support
 
 https://github.com/dave-p/TVH-API-docs - the API docs
 
 https://tvheadend.org/boards/5/topics/34232 - the TVH forum discussion which sparked this off
+
+https://tvheadend.org/boards/5/topics/21836?r=39707 - the discussion about pychromecast
 
