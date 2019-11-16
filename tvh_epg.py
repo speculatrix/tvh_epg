@@ -87,31 +87,39 @@ TS_PAUTH = 'ts_pauth'
 SH_LOGO = 'sh_ch_logo'
 TITLE = 'title'
 DFLT = 'default'
+TYPE= 'type'
+
 # default values of the settings when being created
 SETTINGS_DEFAULTS = {
     TS_URL: {
         TITLE: 'URL of TV Headend Server',
         DFLT: 'http://192.168.1.2:9981',
+        TYPE: 'text',
     },
     TS_URL_ICONS: {
         TITLE: 'URL to picons',
         DFLT: 'http://192.168.1.2/TVLogos/',
+        TYPE: 'text',
     },
     TS_USER: {
         TITLE: 'Username on TVH server',
         DFLT: TS_USER,
+        TYPE: 'text',
     },
     TS_PASS: {
         TITLE: 'Password on TVH server',
         DFLT: TS_PASS,
+        TYPE: 'password',
     },
     TS_PAUTH: {
         TITLE: 'Persistent Auth Token',
         DFLT: TS_PAUTH,
+        TYPE: 'password',
     },
     SH_LOGO: {
         TITLE: 'Show Channel Logos',
         DFLT: '0',
+        TYPE: 'number',
     },
 }
 
@@ -974,9 +982,9 @@ def page_settings():
         else:
             setting_value = SETTINGS_DEFAULTS[setting][DFLT]
 
-        print('      <td width="50%%"><input type="text" name="c_%s" '
+        print('      <td width="50%%"><input type="%s" name="c_%s" '
               'value="%s" style="display:table-cell; width:100%%" /></td>' \
-              % (setting, setting_value, ))
+              % (SETTINGS_DEFAULTS[setting][TYPE], setting, setting_value, ))
         print('      <td>&nbsp;%s</td>' % (SETTINGS_DEFAULTS[setting][DFLT], ))
         print('    </tr>')
 
