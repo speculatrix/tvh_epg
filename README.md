@@ -18,6 +18,16 @@ grateful for any help I can get! See the ROADMAP for plans and
 changes.
 
 
+## Setting Up TV Headend
+
+### Create a user with persistent authentication token
+
+Create a user for playing media, enabling persistent authentication, and copy off that token and put into the settings along with the username and password.
+
+![Audio-Only Profile](https://raw.githubusercontent.com/speculatrix/ya_pi_radio/master/webby_user.png)
+
+
+
 ## installation
 
 * install a web server that can execute CGI-BIN programs, e.g. apache2 with "sudo apt-get install apache2"
