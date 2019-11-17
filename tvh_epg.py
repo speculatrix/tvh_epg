@@ -53,6 +53,8 @@ TS_URL_SVI = 'api/serverinfo'
 
 TS_URL_STR = 'stream/channel'
 
+TS_URL_DVF = 'dvrfile/'
+
 CGI_PARAMS = cgi.FieldStorage()
 
 EPG = 'epg'
@@ -81,6 +83,7 @@ SETTINGS_SECTION = 'user'
 
 TS_URL = 'ts_url'
 TS_URL_ICONS = 'ts_url_icons'
+TS_URL_CAST = 'ts_url_icon_cast'
 TS_USER = 'ts_user'
 TS_PASS = 'ts_pass'
 TS_PAUTH = 'ts_pauth'
@@ -99,6 +102,11 @@ SETTINGS_DEFAULTS = {
     TS_URL_ICONS: {
         TITLE: 'URL to picons',
         DFLT: 'http://192.168.1.2/TVLogos/',
+        TYPE: 'text',
+    },
+    TS_URL_CAST: {
+        TITLE: 'URL to chromecast icon',
+        DFLT: 'http://192.168.1.2/ic_cast_connected_white_24dp.png',
         TYPE: 'text',
     },
     TS_USER: {
@@ -484,7 +492,7 @@ def page_channels():
                 play_url = '?page=m3u&amp;uuid=%s' % (chan['uuid'], )
                 print('<td><a href="%s" download="tvheadend.m3u">%s</a>' % ( play_url, chan_name, ))
                 if CAST_SUPPORT:
-                    print('<br /><a href="?page=chromecast&uri=/%s/%s">=&gt;&gt;cast</a>' % (TS_URL_STR, chan['uuid'], ))
+                    print('<br /><a href="?page=chromecast&uri=/%s/%s"><img src="%s" /></a>' % (TS_URL_STR, chan['uuid'], MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST), ))
 
                 print('</td>\n      <td>%s</td>\n        </tr>' % (chan['number'], ))
 
@@ -503,8 +511,23 @@ def page_chromecast(p_uri, p_cast_device):
 
     chromecasts = pychromecast.get_chromecasts()
 
+    print('uri "%s"<br />' % (p_uri, ))
+    ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    # now for an abominable hack
+    if TS_URL_DVF in p_uri:
+        full_url = '%s%s:%s%s%s%s' % (ts_url[:7], \
+                   MY_SETTINGS.get(SETTINGS_SECTION, TS_USER), \
+                   MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS), \
+                   ts_url[7:],
+                   p_uri, )
+    else:
+        full_url = '%s%s?AUTH=PlJ4Q193YL9y6ooeNJWiTwriVX5s&profile=chromecast' % (ts_url, p_uri)
+    print('fullurl is "%s"<br />' % full_url)
+
+
     print("<p>Please be patient, scanning for chromecast devices can take up to ten seconds</p>")
 
+    ####
     # user must choose a device to cast to
     if p_cast_device == '':
         print('<form method="get" action="">\n'
@@ -518,6 +541,7 @@ def page_chromecast(p_uri, p_cast_device):
         print('</select>\n<input type="submit" name="Choose Device" value="Choose Device">\n</form>')
         return
 
+    ####
     # find the cast device which user chose from friendly name
     print('<br />Debug, finding device with friendly name "%s"<br />' % (p_cast_device, ))
     cast = None
@@ -528,11 +552,9 @@ def page_chromecast(p_uri, p_cast_device):
         print('Error, couldn\'t find the cast device<br />')
         return
 
-
-    print('uri "%s"<br />' % (p_uri, ))
-    full_url = '%s%s?AUTH=PlJ4Q193YL9y6ooeNJWiTwriVX5s&profile=chromecast' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_URL), p_uri)
-    print('fullurl is "%s"<br />' % full_url)
-    #return
+    ####
+    # can now actually get the chromecast to do the streaming
+    #return     # stop the actual casting
     
     cast.wait()
     print('<pre')
@@ -639,7 +661,7 @@ def page_epg():
                       'download="tvheadend.m3u">%s</a> <br />%d' \
                       % (play_url, chan_name, chan['number']))
                 if CAST_SUPPORT:
-                    print('<br /><a href="?page=chromecast&uri=/%s/%s">=&gt;&gt;cast</a>' % (TS_URL_STR, chan['uuid'], ))
+                    print('<br /><a href="?page=chromecast&uri=/%s/%s"><img src="%s" /></a>' % (TS_URL_STR, chan['uuid'], MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST), ))
                 print('</td>')
 
 
@@ -876,9 +898,12 @@ def page_recordings():
                 print(TD_EMPTY_CELL)
 
             if 'title' in entry and 'eng' in entry['title']:
-                print('<td><a href="%s/play/%s" download="tvheadend.m3u">%s</a></td>'
+                print('<td><a href="%s/play/%s" download="tvheadend.m3u">%s</a>'
                       % (MY_SETTINGS.get(SETTINGS_SECTION, TS_URL), \
                          entry['url'], entry['title']['eng'], ))
+                if CAST_SUPPORT:
+                    print('<br /><a href="?page=chromecast&uri=/%s/%s"><img src="%s" /></a>' % (entry['url'], MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST), ))
+                print('</td>')
             else:
                 print(TD_EMPTY_CELL)
 
