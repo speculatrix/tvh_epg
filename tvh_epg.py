@@ -511,11 +511,11 @@ def page_chromecast(p_uri, p_cast_device):
 
     chromecasts = pychromecast.get_chromecasts()
 
-    print('uri "%s"<br />' % (p_uri, ))
+    print('<br /><br />Debug: uri "%s"<br />' % (p_uri, ))
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
     # now for an abominable hack
     if TS_URL_DVF in p_uri:
-        full_url = '%s%s:%s%s%s%s' % (ts_url[:7], \
+        full_url = '%s%s:%s@%s/%s' % (ts_url[:7], \
                    MY_SETTINGS.get(SETTINGS_SECTION, TS_USER), \
                    MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS), \
                    ts_url[7:],
@@ -902,7 +902,7 @@ def page_recordings():
                       % (MY_SETTINGS.get(SETTINGS_SECTION, TS_URL), \
                          entry['url'], entry['title']['eng'], ))
                 if CAST_SUPPORT:
-                    print('<br /><a href="?page=chromecast&uri=/%s/%s"><img src="%s" /></a>' % (entry['url'], MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST), ))
+                    print('<br /><a href="?page=chromecast&uri=%s"><img src="%s" /></a>' % (entry['url'], MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST), ))
                 print('</td>')
             else:
                 print(TD_EMPTY_CELL)
