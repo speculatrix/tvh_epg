@@ -18,7 +18,12 @@ import time
 
 import collections
 import requests
+import socket
 
+from urllib.parse import urlparse
+
+# chromecast support is optional, and since it needs manually installing
+# have to not die if it can't be found
 try:
     import pychromecast
     CAST_SUPPORT = True
@@ -96,17 +101,17 @@ TYPE= 'type'
 SETTINGS_DEFAULTS = {
     TS_URL: {
         TITLE: 'URL of TV Headend Server',
-        DFLT: 'http://192.168.1.2:9981',
+        DFLT: 'http://tvh.example.com:9981',
         TYPE: 'text',
     },
     TS_URL_ICONS: {
         TITLE: 'URL to picons',
-        DFLT: 'http://192.168.1.2/TVLogos/',
+        DFLT: 'http://tvh.eample.com/TVLogos/',
         TYPE: 'text',
     },
     TS_URL_CAST: {
         TITLE: 'URL to chromecast icon',
-        DFLT: 'http://192.168.1.2/ic_cast_connected_white_24dp.png',
+        DFLT: 'http://tvh.eample.com/ic_cast_connected_white_24dp.png',
         TYPE: 'text',
     },
     TS_USER: {
@@ -511,17 +516,33 @@ def page_chromecast(p_uri, p_cast_device):
 
     chromecasts = pychromecast.get_chromecasts()
 
-    print('<br /><br />Debug: uri "%s"<br />' % (p_uri, ))
+    # split the TVH server URL up so we can get its IP address
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-    # now for an abominable hack
+    try:
+        ts_url_parsed = urlparse(ts_url)
+    except Exception as e:
+        ##print(str(e))
+        print('<p>Error parsing %s</p>' % (str(e), ))
+        return
+
+    print('<p>hostname %s, netloc %s</p>' % (ts_url_parsed.hostname, ts_url_parsed.netloc, ))
+
+
+    print('<br /><br />Debug: uri "%s"<br />' % (p_uri, ))
+    # now for abominable hacks
+    ts_ip = socket.gethostbyname(ts_url_parsed.hostname)
     if TS_URL_DVF in p_uri:
-        full_url = '%s%s:%s@%s/%s' % (ts_url[:7], \
+        # recordings need to get a username/password
+        full_url = '%s://%s:%s@%s:%s/%s' \
+                 % (ts_url_parsed.scheme, \
                    MY_SETTINGS.get(SETTINGS_SECTION, TS_USER), \
                    MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS), \
-                   ts_url[7:],
+                   ts_ip,
+                   ts_url_parsed.port,
                    p_uri, )
     else:
-        full_url = '%s%s?AUTH=PlJ4Q193YL9y6ooeNJWiTwriVX5s&profile=chromecast' % (ts_url, p_uri)
+        # live streams use persistent auth
+        full_url = '%s://%s:%s%s?AUTH=%s&profile=chromecast' % (ts_url_parsed.scheme, ts_ip, ts_url_parsed.port, p_uri, MY_SETTINGS.get(SETTINGS_SECTION, TS_PAUTH), )
     print('fullurl is "%s"<br />' % full_url)
 
 
@@ -555,7 +576,6 @@ def page_chromecast(p_uri, p_cast_device):
     ####
     # can now actually get the chromecast to do the streaming
     #return     # stop the actual casting
-    
     cast.wait()
     print('<pre')
     print(cast.device)
@@ -570,7 +590,7 @@ def page_chromecast(p_uri, p_cast_device):
     time.sleep(5)
     mc.play()
     print('</pre')
-
+    print('<p>chromecast page completed</p>')
 
 ##########################################################################################
 def page_epg():
@@ -1019,7 +1039,9 @@ def page_settings():
     </tr>
   </table>
   </form><br /><br/>
-Note that the URL for the TVHeadend server MUST be resolvable from the outside world because chromecast devices go direct to Google for DNS and will not be able to resolve hostname in private DNS... therefore consider using the IP address.
+The hostname in the URL for the TVHeadend receiver will be automatically 
+turned into an IP address when chromecasting because chromecast devices
+go direct to Google's DNS servers and thus private DNS is ignored.
 ''')
 
     config_file_handle = open(CONFIG_FILE_NAME, 'w')
@@ -1264,6 +1286,7 @@ def web_interface():
     global CONFIG_FILE_NAME
     global MY_SETTINGS
 
+    # process the CGI params
     if 'event_id' in CGI_PARAMS:
         p_event_id = CGI_PARAMS.getvalue('event_id')
     else:
@@ -1284,7 +1307,6 @@ def web_interface():
     else:
         p_cast_device = ''
 
-
     #illegal_param_count = 0
     error_text = 'Unknown error'
     (config_bad, error_text) = check_load_config_file()
@@ -1297,6 +1319,7 @@ def web_interface():
     else:   # set the default page if none provided
         #p_page = 'error'
         p_page = EPG
+
 
     if p_page == EPG:
         html_page_header()
