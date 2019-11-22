@@ -1,9 +1,21 @@
 # tvh_epg
 
 ## overview
-This is the early days for this project, at the moment it's
-just a basic now/next electronic program guide and recordings
-list for TVHeaded.
+This is an electronic program guide for TV Headend, whose user interface
+is rendered entirely in simple HTML so as to be lightweight.
+
+It was written because TVH doesn't really have an EPG, just a list of 
+what's on and how much of currently playing programs has elapsed.
+
+Users can choose just to see a channel list, a full EPG in the classic
+style of horizontal bars for each channel, and a list of recordings.
+
+This tool doesn't have the ability to play channels or recordings at all,
+rather, it outputs an m3u playlist file which can be opened in a player
+like VLC or MXPlayer. Work is underway to provide Chromecast support
+(which requires that the web server running this program is on the same
+network (broadcast domain) as a Chromecast.
+
 
 It's a simple python3 cgi-bin program which grabs channel, EPG or
 recordings data from a TVHeadEnd server and presents it in a grid
@@ -16,6 +28,9 @@ one.
 I expect to add more features to make it more useful... I'd be
 grateful for any help I can get! See the ROADMAP for plans and
 changes.
+
+Although the instructions seem a little daunting at first, each
+stage should be fairly easy.
 
 
 ## Setting Up TV Headend
