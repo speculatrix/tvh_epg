@@ -2,6 +2,9 @@
 
 This is the barest details of how to proceed. These instructions will be improved over time.
 
+Note that the web server running this program is on the same network (broadcast
+domain) as a Chromecast, otherwise no devices will be found.
+
 
 ## Persistent Auth Token
 
