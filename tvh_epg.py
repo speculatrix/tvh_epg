@@ -17,10 +17,9 @@ import sys
 import time
 
 import collections
-import requests
 import socket
-
-from urllib.parse import urlparse
+import urllib
+import requests
 
 # chromecast support is optional, and since it needs manually installing
 # have to not die if it can't be found
@@ -31,9 +30,11 @@ except ImportError:
     CAST_SUPPORT = False
 
 
+# pylint:disable=global-statement
+
 # requires making code less readable:
-# pylint:disable=bad-whitespace
 # pylint:disable=too-many-branches
+# pylint:disable=too-many-lines
 # pylint:disable=too-many-locals
 # pylint:disable=too-many-nested-blocks
 # pylint:disable=too-many-statements
@@ -95,7 +96,7 @@ TS_PAUTH = 'ts_pauth'
 SH_LOGO = 'sh_ch_logo'
 TITLE = 'title'
 DFLT = 'default'
-TYPE= 'type'
+TYPE = 'type'
 
 # default values of the settings when being created
 SETTINGS_DEFAULTS = {
@@ -141,6 +142,7 @@ DOCROOT_DEFAULT = '/home/hts'
 
 ##########################################################################################
 def check_load_config_file():
+# pylint:disable=too-many-return-statements
     '''check there's a config file which is writable;
        returns 0 if OK, -1 if the rest of the page should be aborted,
        > 0 to trigger rendering of the settings page'''
@@ -210,8 +212,8 @@ Please do the following - needs root:
         return (1, error_text)
 
     if not MY_SETTINGS.read(CONFIG_FILE_NAME):
-        error_text =('<b>Error</b>, failed to open and read config file "%s"' \
-                     % (CONFIG_FILE_NAME, ))
+        error_text = ('<b>Error</b>, failed to open and read config file "%s"' \
+                      % (CONFIG_FILE_NAME, ))
         return (-1, error_text)
 
     return (0, 'OK')
@@ -465,7 +467,7 @@ def page_channels():
       <th>Channel Number</th>
     </tr>
 ''')
-        ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+        #ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
         icon_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_ICONS)
         for chan_name in channel_dict:
             chan = channel_dict[chan_name]
@@ -486,7 +488,7 @@ def page_channels():
                             chan_name_ref = chan_name[:-2]
                         else:
                             chan_name_ref = chan_name
-                        chan_img_url = '%s/%s.png' % ( icon_url, chan_name_ref, )
+                        chan_img_url = '%s/%s.png' % (icon_url, chan_name_ref, )
                         print(
                             '<td width="100px" align="right" class="chan_icon">'
                             '<img height="12%%" src="%s" /></td>' %
@@ -494,10 +496,14 @@ def page_channels():
                     else:
                         print('<td>&nbsp;</td>')
 
-                play_url = '?page=m3u&amp;uuid=%s' % (chan['uuid'], )
-                print('<td><a href="%s" download="tvheadend.m3u">%s</a>' % ( play_url, chan_name, ))
+                play_url = '?page=m3u&amp;uuid=/%s/%s' % (TS_URL_STR, chan['uuid'], )
+                print('<td><a href="%s" download="tvheadend.m3u">%s</a>' % (play_url, chan_name, ))
                 if CAST_SUPPORT:
-                    print('<br /><a href="?page=chromecast&uri=/%s/%s"><img src="%s" /></a>' % (TS_URL_STR, chan['uuid'], MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST), ))
+                    print('<br /><a href="?page=chromecast&uri=/%s/%s"><img src="%s" /></a>' % \
+                          (TS_URL_STR,
+                           chan['uuid'],
+                           MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
+                          ))
 
                 print('</td>\n      <td>%s</td>\n        </tr>' % (chan['number'], ))
 
@@ -519,10 +525,10 @@ def page_chromecast(p_uri, p_cast_device):
     # split the TVH server URL up so we can get its IP address
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
     try:
-        ts_url_parsed = urlparse(ts_url)
-    except Exception as e:
-        ##print(str(e))
-        print('<p>Error parsing %s</p>' % (str(e), ))
+        ts_url_parsed = urllib.parse.urlparse(ts_url)
+    except urllib.error.URLError as url_excpt:
+        ##print(str(url_excpt))
+        print('<p>Error parsing %s</p>' % (str(url_excpt), ))
         return
 
     print('<p>hostname %s, netloc %s</p>' % (ts_url_parsed.hostname, ts_url_parsed.netloc, ))
@@ -534,15 +540,19 @@ def page_chromecast(p_uri, p_cast_device):
     if TS_URL_DVF in p_uri:
         # recordings need to get a username/password
         full_url = '%s://%s:%s@%s:%s/%s' \
-                 % (ts_url_parsed.scheme, \
-                   MY_SETTINGS.get(SETTINGS_SECTION, TS_USER), \
-                   MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS), \
-                   ts_ip,
-                   ts_url_parsed.port,
-                   p_uri, )
+                   % (ts_url_parsed.scheme,
+                      MY_SETTINGS.get(SETTINGS_SECTION, TS_USER),
+                      MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS),
+                      ts_ip,
+                      ts_url_parsed.port,
+                      p_uri, )
     else:
         # live streams use persistent auth
-        full_url = '%s://%s:%s%s?AUTH=%s&profile=chromecast' % (ts_url_parsed.scheme, ts_ip, ts_url_parsed.port, p_uri, MY_SETTINGS.get(SETTINGS_SECTION, TS_PAUTH), )
+        full_url = '%s://%s:%s%s?AUTH=%s&profile=chromecast' \
+                   % (ts_url_parsed.scheme,
+                      ts_ip, ts_url_parsed.port,
+                      p_uri, MY_SETTINGS.get(SETTINGS_SECTION, TS_PAUTH),
+                     )
     print('fullurl is "%s"<br />' % full_url)
 
 
@@ -557,18 +567,23 @@ def page_chromecast(p_uri, p_cast_device):
         print('Select device')
         print('<select name="cast_device">')
 
-        for cc in chromecasts:
-            print ('<option value="%s">%s</option>' % (cc.device.friendly_name, cc.device.friendly_name, ))
-        print('</select>\n<input type="submit" name="Choose Device" value="Choose Device">\n</form>')
+        for cast_dev in chromecasts:
+            print('<option value="%s">%s</option>' % \
+                  (cast_dev.device.friendly_name,
+                   cast_dev.device.friendly_name,
+                  ))
+        print('''</select>
+<input type="submit" name="Choose Device" value="Choose Device">
+</form>''')
         return
 
     ####
     # find the cast device which user chose from friendly name
     print('<br />Debug, finding device with friendly name "%s"<br />' % (p_cast_device, ))
     cast = None
-    for cc in chromecasts:
-        if cc.device.friendly_name == p_cast_device:
-            cast = cc
+    for cast_dev in chromecasts:
+        if cast_dev.device.friendly_name == p_cast_device:
+            cast = cast_dev
     if cast is None:
         print('Error, couldn\'t find the cast device<br />')
         return
@@ -581,14 +596,14 @@ def page_chromecast(p_uri, p_cast_device):
     print(cast.device)
     print(cast.status)
 
-    mc = cast.media_controller
-    mc.play_media(full_url,  'video/mp4')
+    c_m_c = cast.media_controller
+    c_m_c.play_media(full_url, 'video/mp4')
 
-    mc.block_until_active()
-    print(mc.status)
-    mc.pause()
+    c_m_c.block_until_active()
+    print(c_m_c.status)
+    c_m_c.pause()
     time.sleep(5)
-    mc.play()
+    c_m_c.play()
     print('</pre')
     print('<p>chromecast page completed</p>')
 
@@ -668,7 +683,7 @@ def page_epg():
                             chan_name_ref = chan_name[:-2]
                         else:
                             chan_name_ref = chan_name
-                        chan_img_url = '%s/%s.png' % ( icon_url, chan_name_ref, )
+                        chan_img_url = '%s/%s.png' % (icon_url, chan_name_ref, )
                         print(
                             '<td width="100px" align="right" class="chan_icon">'
                             '<img height="12%%" src="%s" /></td>' %
@@ -676,12 +691,16 @@ def page_epg():
                     else:
                         print('<td>&nbsp;</td>')
 
-                play_url = '?page=m3u&amp;uuid=%s' % (chan['uuid'], )
+                play_url = '?page=m3u&amp;uuid=/%s/%s' % (TS_URL_STR, chan['uuid'], )
                 print('      <td width="100px" align="right"><a href="%s" '
                       'download="tvheadend.m3u">%s</a> <br />%d' \
                       % (play_url, chan_name, chan['number']))
                 if CAST_SUPPORT:
-                    print('<br /><a href="?page=chromecast&uri=/%s/%s"><img src="%s" /></a>' % (TS_URL_STR, chan['uuid'], MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST), ))
+                    print('<br /><a href="?page=chromecast&uri=/%s/%s"><img src="%s" /></a>' % \
+                          (TS_URL_STR,
+                           chan['uuid'],
+                           MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
+                          ))
                 print('</td>')
 
 
@@ -810,13 +829,27 @@ def page_m3u(p_uuid):
     else:
         ts_pauth = ''
 
+    # split the TVH server URL up so we can get its IP address
+    ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    try:
+        ts_url_parsed = urllib.parse.urlparse(ts_url)
+    except urllib.error.URLError as url_excpt:
+        ##print(str(url_excpt))
+        print('<p>Error parsing %s</p>' % (str(url_excpt), ))
+        return
+
+    full_url = '%s://%s:%s@%s:%s%s?auth=%s' \
+               % (ts_url_parsed.scheme,
+                  MY_SETTINGS.get(SETTINGS_SECTION, TS_USER),
+                  MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS),
+                  ts_url_parsed.hostname,
+                  ts_url_parsed.port,
+                  p_uuid,
+                  ts_pauth, )
+
+
     print('#EXTM3U')
-    print('%s/%s/%s%s' % (
-        MY_SETTINGS.get(SETTINGS_SECTION, TS_URL),
-        TS_URL_STR,
-        p_uuid,
-        ts_pauth,
-    ))
+    print(full_url)
 
 
 ##########################################################################################
@@ -918,11 +951,16 @@ def page_recordings():
                 print(TD_EMPTY_CELL)
 
             if 'title' in entry and 'eng' in entry['title']:
-                print('<td><a href="%s/play/%s" download="tvheadend.m3u">%s</a>'
-                      % (MY_SETTINGS.get(SETTINGS_SECTION, TS_URL), \
-                         entry['url'], entry['title']['eng'], ))
+                print('<td><a href="?page=m3u&amp;uuid=/play/%s" download="tvheadend.m3u">%s</a>'
+                      % (entry['url'], entry['title']['eng'], ))
+                #print('<td><a href="%s/play/%s" download="tvheadend.m3u">%s</a>'
+                #      % (MY_SETTINGS.get(SETTINGS_SECTION, TS_URL), \
+                #         entry['url'], entry['title']['eng'], ))
                 if CAST_SUPPORT:
-                    print('<br /><a href="?page=chromecast&uri=%s"><img src="%s" /></a>' % (entry['url'], MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST), ))
+                    print('<br /><a href="?page=chromecast&uri=%s"><img src="%s" /></a>' % \
+                          (entry['url'],
+                           MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
+                          ))
                 print('</td>')
             else:
                 print(TD_EMPTY_CELL)
@@ -1039,7 +1077,7 @@ def page_settings():
     </tr>
   </table>
   </form><br /><br/>
-The hostname in the URL for the TVHeadend receiver will be automatically 
+The hostname in the URL for the TVHeadend receiver will be automatically
 turned into an IP address when chromecasting because chromecast devices
 go direct to Google's DNS servers and thus private DNS is ignored.
 ''')
