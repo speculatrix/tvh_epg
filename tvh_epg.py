@@ -838,7 +838,7 @@ def page_m3u(p_uuid):
         print('<p>Error parsing %s</p>' % (str(url_excpt), ))
         return
 
-    full_url = '%s://%s:%s@%s:%s%s?auth=%s' \
+    full_url = '%s://%s:%s@%s:%s%s%s' \
                % (ts_url_parsed.scheme,
                   MY_SETTINGS.get(SETTINGS_SECTION, TS_USER),
                   MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS),
