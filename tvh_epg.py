@@ -539,13 +539,14 @@ def page_chromecast(p_uri, p_cast_device):
     ts_ip = socket.gethostbyname(ts_url_parsed.hostname)
     if TS_URL_DVF in p_uri:
         # recordings need to get a username/password
-        full_url = '%s://%s:%s@%s:%s/%s' \
+        full_url = '%s://%s:%s@%s:%s/%s?profile=chromecast' \
                    % (ts_url_parsed.scheme,
                       MY_SETTINGS.get(SETTINGS_SECTION, TS_USER),
                       MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS),
                       ts_ip,
                       ts_url_parsed.port,
-                      p_uri, )
+                      p_uri,
+                     )
     else:
         # live streams use persistent auth
         full_url = '%s://%s:%s%s?AUTH=%s&profile=chromecast' \
@@ -553,6 +554,9 @@ def page_chromecast(p_uri, p_cast_device):
                       ts_ip, ts_url_parsed.port,
                       p_uri, MY_SETTINGS.get(SETTINGS_SECTION, TS_PAUTH),
                      )
+
+
+
     print('fullurl is "%s"<br />' % full_url)
 
 
@@ -838,15 +842,24 @@ def page_m3u(p_uuid):
         print('<p>Error parsing %s</p>' % (str(url_excpt), ))
         return
 
-    full_url = '%s://%s:%s@%s:%s%s%s' \
+    if TS_URL_DVF in p_uuid:
+        # recordings need to get a username/password
+        full_url = '%s://%s:%s@%s:%s/%s?profile=chromecast' \
+                   % (ts_url_parsed.scheme,
+                      MY_SETTINGS.get(SETTINGS_SECTION, TS_USER),
+                      MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS),
+                      ts_url_parsed.hostname,
+                      ts_url_parsed.port,
+                      p_uri,
+                     )
+    else:
+        # live streams use persistent auth
+        full_url = '%s://%s:%s%s%s' \
                % (ts_url_parsed.scheme,
-                  MY_SETTINGS.get(SETTINGS_SECTION, TS_USER),
-                  MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS),
                   ts_url_parsed.hostname,
                   ts_url_parsed.port,
                   p_uuid,
                   ts_pauth, )
-
 
     print('#EXTM3U')
     print(full_url)
@@ -953,9 +966,6 @@ def page_recordings():
             if 'title' in entry and 'eng' in entry['title']:
                 print('<td><a href="?page=m3u&amp;uuid=/play/%s" download="tvheadend.m3u">%s</a>'
                       % (entry['url'], entry['title']['eng'], ))
-                #print('<td><a href="%s/play/%s" download="tvheadend.m3u">%s</a>'
-                #      % (MY_SETTINGS.get(SETTINGS_SECTION, TS_URL), \
-                #         entry['url'], entry['title']['eng'], ))
                 if CAST_SUPPORT:
                     print('<br /><a href="?page=chromecast&uri=%s"><img src="%s" /></a>' % \
                           (entry['url'],
