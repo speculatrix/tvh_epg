@@ -2,6 +2,17 @@
 # -*- coding: utf-8 -*-
 '''
 a really really basic EPG for TVHeadend
+
+Main information:
+    https://github.com/speculatrix/tvh_epg
+
+Chromecast information:
+    https://github.com/speculatrix/tvh_epg/blob/master/CHROMECAST.md
+
+    note that not only do you need to download pychromecast from
+        https://github.com/balloob/pychromecast
+    and put it into a subdirectory alongside this cgi-bin, but you 
+    need to pip install zeroconf to get it to work.
 '''
 
 import cgi
