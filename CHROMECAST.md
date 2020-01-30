@@ -13,6 +13,13 @@ You need to create a user with a persistent authentication token, and put that i
 
 ## Install pychromecast library
 
+### you need to install some pip modules:
+
+pip3 install zeroconf requests protobuf casttube --upgrade
+
+
+### you need to copy the pychromecast python module
+
 you need to git clone the <a href="https://github.com/balloob/pychromecast">pychromecast repo</a> and copy the subdirectory pychromecast to the place where you put the tvh_epg.py CGI script. If the tvh_epg.py script can't import pychromecast then you won't see the link against the channel list to cast it.
 
 Suppose the tvh_epg.py script is in /usr/lib/cgi-bin, then do this:
@@ -23,6 +30,7 @@ cd pychromecast
 rsync -au pychromecast /usr/lib/cgi-bin
 ```
 
+NOTE be careful not to add trailing slashes in the rsync command otherwise it will put the files into the wrong place.
 
 
 ## Streaming Profile
