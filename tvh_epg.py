@@ -337,7 +337,9 @@ def get_channel_dict():
         print('<pre>Error code %d\n%s</pre>' % (ts_response.status_code, ts_response.content, ))
         return {}
 
-    ts_json = json.loads(ts_response.text, strict=False)
+    ts_text = ts_response.text
+    #print('<pre>Extreme Debug!\n\n%s\n<pre>' % (ts_text,))
+    ts_json = json.loads(ts_text, strict=False)
     #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
     #                                   indent=4, separators=(',', ': ')) )
 
