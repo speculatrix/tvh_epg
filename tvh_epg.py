@@ -311,7 +311,7 @@ def get_channeltag_grid():
         print('<pre>Error code %d\n%s</pre>' % (ts_response.status_code, ts_response.content, ))
         return {}
 
-    ts_json = ts_response.json()
+    ts_json = json.loads(ts_response.text, strict=False)
     #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
     #                                   indent=4, separators=(',', ': ')) )
 
@@ -337,7 +337,7 @@ def get_channel_dict():
         print('<pre>Error code %d\n%s</pre>' % (ts_response.status_code, ts_response.content, ))
         return {}
 
-    ts_json = ts_response.json()
+    ts_json = json.loads(ts_response.text, strict=False)
     #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
     #                                   indent=4, separators=(',', ': ')) )
 
@@ -403,7 +403,7 @@ def get_dvr_config_grid():
     )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     print('<!-- get_dvr_config_grid URL %s -->' % (ts_query, ))
-    ts_json = ts_response.json()
+    ts_json = json.loads(ts_response.text, strict=False)
 
     #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
     #                                   indent=4, separators=(',', ': ')) )
@@ -728,7 +728,7 @@ def page_epg():
                 print('<!-- channel EPG URL %s -->' % (ts_query, ))
                 ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
                 print('<!-- requests.response code %d -->' % (ts_response.status_code, ))
-                ts_json = ts_response.json()
+                ts_json = json.loads(ts_response.text, strict=False)
 
                 if len(ts_json['entries']):
                     #chan[EPG] = ts_json['entries']
@@ -923,7 +923,7 @@ def page_record(p_event_id, p_profile):
                   (ts_url, TS_URL_CBE, p_profile, p_event_id,)
         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
         print('<!-- page_record CBE URL %s -->' % (ts_url, ))
-        ts_json = ts_response.json()
+        ts_json = json.loads(ts_response.text, strict=False)
 
         #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
         #                                   indent=4, separators=(',', ': ')) )
