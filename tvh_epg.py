@@ -730,7 +730,9 @@ def page_epg():
                 print('<!-- channel EPG URL %s -->' % (ts_query, ))
                 ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
                 print('<!-- requests.response code %d -->' % (ts_response.status_code, ))
-                ts_json = json.loads(ts_response.text, strict=False)
+                ts_text = ts_response.text
+                #print('<td><pre>Extreme Debug!\n\n%s\n<pre></td>' % (ts_text,))
+                ts_json = json.loads(ts_text, strict=False)
 
                 if len(ts_json['entries']):
                     #chan[EPG] = ts_json['entries']
