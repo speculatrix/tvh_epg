@@ -865,7 +865,7 @@ def page_m3u(p_uuid):
                       MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS),
                       ts_url_parsed.hostname,
                       ts_url_parsed.port,
-                      p_uri,
+                      p_uuid,
                      )
     else:
         # live streams use persistent auth
