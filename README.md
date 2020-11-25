@@ -12,9 +12,10 @@ style of horizontal bars for each channel, and a list of recordings.
 
 This tool doesn't have the ability to play channels or recordings at all,
 rather, it outputs an m3u playlist file which can be opened in a player
-like VLC or MXPlayer. Work is underway to provide Chromecast support
-(which requires that the web server running this program is on the same
-network (broadcast domain) as a Chromecast.
+like VLC or MXPlayer.
+
+There is now basic Chromecast support (which requires that the web server
+running this program is on the same network (broadcast domain) as a Chromecast.
 
 
 It's a simple python3 cgi-bin program which grabs channel, EPG or
@@ -54,7 +55,12 @@ Create a user for playing media, enabling persistent authentication, and copy of
 
 ## chromecast
 
-some support for chromecast is being developed, see <a href="CHROMECAST.md">CHROMECAST.md</a>
+There is basic support for chromecast, see <a href="CHROMECAST.md">CHROMECAST.md</a>
+for installation details. The web server running the CGI needs to be on the
+same network.
+It's quite slow as the pychromecast library has to listen on the network for
+the chromecast to announce itself.
+
 
 ## roadmap
 
