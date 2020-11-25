@@ -979,7 +979,7 @@ def page_recordings():
                 print(TD_EMPTY_CELL)
 
             if 'title' in entry and 'eng' in entry['title']:
-                print('<td><a href="?page=m3u&amp;uuid=/play/%s" download="tvheadend.m3u">%s</a>'
+                print('<td><a href="?page=m3u&amp;uuid=play/%s" download="tvheadend.m3u">%s</a>'
                       % (entry['url'], entry['title']['eng'], ))
                 if CAST_SUPPORT:
                     print('<br /><a href="?page=chromecast&uri=%s"><img src="%s" /></a>' % \
