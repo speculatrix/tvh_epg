@@ -19,7 +19,16 @@
 * make password fields write-only, or hide them in some way?
 
 
+## Bugs
+* tooltip exists even if empty
+* 
+
 ## Done - in reverse order
+
+20201125
+* live stream m3u contains the persitent auth token
+* recordings stream m3u contains user:pass
+* various bug fixes
 
 20191114
 * first cut of a version which can send streams to chromecast;
