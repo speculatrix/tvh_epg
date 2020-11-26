@@ -105,6 +105,7 @@ TS_USER = 'ts_user'
 TS_PASS = 'ts_pass'
 TS_PAUTH = 'ts_pauth'
 SH_LOGO = 'sh_ch_logo'
+MAX_CHANS = 'max_chans'
 TITLE = 'title'
 DFLT = 'default'
 TYPE = 'type'
@@ -144,6 +145,11 @@ SETTINGS_DEFAULTS = {
     SH_LOGO: {
         TITLE: 'Show Channel Logos',
         DFLT: '0',
+        TYPE: 'number',
+    },
+    MAX_CHANS: {
+        TITLE: 'Maximum Number Of Channels',
+        DFLT: '500',
         TYPE: 'number',
     },
 }
@@ -324,12 +330,14 @@ def get_channel_dict():
 
     global MY_SETTINGS
 
-    ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
-    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
-    ts_query = '%s/%s?limit=400' % (
+    ts_url      = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_user     = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
+    ts_pass     = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
+    ts_max_ch   = MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
+    ts_query = '%s/%s?limit=%s' % (
         ts_url,
         TS_URL_CHN,
+        ts_max_ch,
     )
     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     print('<!-- get_channel_dict URL %s -->' % (ts_query, ))
@@ -445,8 +453,10 @@ def page_channels():
 
     cdl = len(channel_dict)
     print('''<p><b>Channel count: %d</b></p>
+<p>Maximum number of channels viewable %s</p>
 <p>Note, the links are the streams, open in VLC
-- you can drag and drop the link into a VLC window</p>''' % (cdl, ))
+- you can drag and drop the link into a VLC window</p>''' % (cdl, MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
+ ))
 
     # channel labels
     if cdl:
@@ -662,8 +672,10 @@ def page_epg():
   </form>''')
 
         print('''<p><b>Channel count: %d</b></p>
+<p>Maximum number of channels viewable %s</p>
 <p>Note, the links are the streams, open in VLC
-- you can drag and drop the link into a VLC window</p>''' % (cdl, ))
+- you can drag and drop the link into a VLC window</p>''' % (cdl, MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
+ ))
 
         # get the EPG data for each channel
         print('''  <table width="1700px">
