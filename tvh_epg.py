@@ -11,7 +11,7 @@ Chromecast information:
 
     note that not only do you need to download pychromecast from
         https://github.com/balloob/pychromecast
-    and put it into a subdirectory alongside this cgi-bin, but you 
+    and put it into a subdirectory alongside this cgi-bin, but you
     need to pip install zeroconf to get it to work.
 '''
 
@@ -49,7 +49,6 @@ except ImportError:
 # pylint:disable=too-many-locals
 # pylint:disable=too-many-nested-blocks
 # pylint:disable=too-many-statements
-
 # broken in pylint3:
 # pylint:disable=global-variable-not-assigned
 
@@ -330,10 +329,10 @@ def get_channel_dict():
 
     global MY_SETTINGS
 
-    ts_url      = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
-    ts_user     = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
-    ts_pass     = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
-    ts_max_ch   = MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
+    ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
+    ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
+    ts_max_ch = MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
     ts_query = '%s/%s?limit=%s' % (
         ts_url,
         TS_URL_CHN,
@@ -455,8 +454,9 @@ def page_channels():
     print('''<p><b>Channel count: %d</b></p>
 <p>Maximum number of channels viewable %s</p>
 <p>Note, the links are the streams, open in VLC
-- you can drag and drop the link into a VLC window</p>''' % (cdl, MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
- ))
+- you can drag and drop the link into a VLC window</p>''' \
+% (cdl, MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
+  ))
 
     # channel labels
     if cdl:
@@ -543,7 +543,14 @@ def page_chromecast(p_uri, p_cast_device):
 
     global MY_SETTINGS
 
-    chromecasts = pychromecast.get_chromecasts()
+    chromecasts, browser = pychromecast.get_chromecasts()
+    if isinstance(chromecasts, tuple):
+        chromecasts, browser = chromecasts
+    browser.close()
+
+
+    browser.close()
+
 
     # split the TVH server URL up so we can get its IP address
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
@@ -634,6 +641,7 @@ def page_chromecast(p_uri, p_cast_device):
     print('</pre')
     print('<p>chromecast page completed</p>')
 
+
 ##########################################################################################
 def page_epg():
     '''prints the EPG to stdout'''
@@ -674,8 +682,9 @@ def page_epg():
         print('''<p><b>Channel count: %d</b></p>
 <p>Maximum number of channels viewable %s</p>
 <p>Note, the links are the streams, open in VLC
-- you can drag and drop the link into a VLC window</p>''' % (cdl, MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
- ))
+- you can drag and drop the link into a VLC window</p>''' \
+% (cdl, MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
+  ))
 
         # get the EPG data for each channel
         print('''  <table width="1700px">
