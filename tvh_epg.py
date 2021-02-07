@@ -31,6 +31,8 @@ import collections
 import socket
 import urllib
 import requests
+from requests.auth import HTTPDigestAuth
+
 
 # chromecast support is optional, and since it needs manually installing
 # have to not die if it can't be found
@@ -97,14 +99,15 @@ CONTROL_DIR = '/var/lib/tvh_epg'
 SETTINGS_FILE = 'tvh_epg_settings.ini'
 SETTINGS_SECTION = 'user'
 
+MAX_CHANS = 'max_chans'
+SH_LOGO = 'sh_ch_logo'
+TS_AUTH = 'auth_plain_digest'
+TS_PASS = 'ts_pass'
+TS_PAUTH = 'ts_pauth'
 TS_URL = 'ts_url'
 TS_URL_ICONS = 'ts_url_icons'
 TS_URL_CAST = 'ts_url_icon_cast'
 TS_USER = 'ts_user'
-TS_PASS = 'ts_pass'
-TS_PAUTH = 'ts_pauth'
-SH_LOGO = 'sh_ch_logo'
-MAX_CHANS = 'max_chans'
 TITLE = 'title'
 DFLT = 'default'
 TYPE = 'type'
@@ -129,14 +132,19 @@ SETTINGS_DEFAULTS = {
         TYPE: 'text',
     },
     TS_USER: {
-        TITLE: 'Username on TVH server',
-        DFLT: TS_USER,
-        TYPE: 'text',
+        TITLE:  'Username on TVH server',
+        DFLT:   TS_USER,
+        TYPE:   'text',
     },
     TS_PASS: {
-        TITLE: 'Password on TVH server',
-        DFLT: TS_PASS,
-        TYPE: 'password',
+        TITLE:  'Password on TVH server',
+        DFLT:   TS_PASS,
+        TYPE:   'password',
+    },
+    TS_AUTH: {
+        TITLE:  'Authentication, plain or digest',
+        DFLT:   'digest',
+        TYPE:   'text'
     },
     TS_PAUTH: {
         TITLE: 'Persistent Auth Token',
@@ -316,13 +324,17 @@ def get_channeltag_grid():
     global MY_SETTINGS
 
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_auth = MY_SETTINGS.get(SETTINGS_SECTION, TS_AUTH)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
     ts_query = '%s/%s' % (
         ts_url,
         TS_URL_CTG,
     )
-    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    if ts_auth == 'plain':
+        ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    else:
+        ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
     print('<!-- get_channeltag_grid URL %s -->' % (ts_query, ))
     if ts_response.status_code != 200:
         print('<pre>Error code %d\n%s</pre>' % (ts_response.status_code, ts_response.content, ))
@@ -342,6 +354,7 @@ def get_channel_dict():
     global MY_SETTINGS
 
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_auth = MY_SETTINGS.get(SETTINGS_SECTION, TS_AUTH)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
     ts_max_ch = MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
@@ -350,7 +363,10 @@ def get_channel_dict():
         TS_URL_CHN,
         ts_max_ch,
     )
-    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    if ts_auth == 'plain':
+        ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    else:
+        ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
     print('<!-- get_channel_dict URL %s -->' % (ts_query, ))
     if ts_response.status_code != 200:
         print('<pre>Error code %d\n%s</pre>' % (ts_response.status_code, ts_response.content, ))
@@ -416,13 +432,17 @@ def get_dvr_config_grid():
     global MY_SETTINGS
 
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_auth = MY_SETTINGS.get(SETTINGS_SECTION, TS_AUTH)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
     ts_query = '%s/%s' % (
         ts_url,
         TS_URL_DCG,
     )
-    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    if ts_auth == 'plain':
+        ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    else:
+        ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
     print('<!-- get_dvr_config_grid URL %s -->' % (ts_query, ))
     ts_json = json.loads(ts_response.text, strict=False)
 
@@ -715,6 +735,7 @@ def page_epg():
 
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
         icon_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_ICONS)
+        ts_auth = MY_SETTINGS.get(SETTINGS_SECTION, TS_AUTH)
         ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
         ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
         icon_width = MY_SETTINGS.get(SETTINGS_SECTION, ICON_WIDTH)
@@ -771,7 +792,10 @@ def page_epg():
                     chan['uuid'],
                 )
                 print('<!-- channel EPG URL %s -->' % (ts_query, ))
-                ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+                if ts_auth == 'plain':
+                    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+                else:
+                    ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
                 print('<!-- requests.response code %d -->' % (ts_response.status_code, ))
                 ts_text = ts_response.text
                 #print('<td><pre>Extreme Debug!\n\n%s\n<pre></td>' % (ts_text,))
@@ -964,11 +988,15 @@ def page_record(p_event_id, p_profile):
         print('<p>Work In Progress</p>')
 
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+        ts_auth = MY_SETTINGS.get(SETTINGS_SECTION, TS_AUTH)
         ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
         ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
         ts_query = '%s/%s?config_uuid=%s&event_id=%s' %    \
                   (ts_url, TS_URL_CBE, p_profile, p_event_id,)
-        ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+        if ts_auth == 'plain':
+            ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+        else:
+            ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
         print('<!-- page_record CBE URL %s -->' % (ts_url, ))
         ts_json = json.loads(ts_response.text, strict=False)
 
@@ -995,13 +1023,17 @@ def page_recordings():
     print('<h1>Recordings</h1>')
 
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_auth = MY_SETTINGS.get(SETTINGS_SECTION, TS_AUTH)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
     ts_query = '%s/%s' % (
         ts_url,
         TS_URL_DEG,
     )
-    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    if ts_auth == 'plain':
+        ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    else:
+        ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
     print('<!-- status inputs URL %s -->' % (ts_query, ))
     if ts_response.status_code != 200:
         print('<p>HTTP error response %d'
@@ -1061,6 +1093,7 @@ def page_serverinfo():
     print('<h1>Server Info</h1>')
 
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_auth = MY_SETTINGS.get(SETTINGS_SECTION, TS_AUTH)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
     ts_query = '%s/%s' % (
@@ -1068,7 +1101,10 @@ def page_serverinfo():
         TS_URL_SVI,
     )
     print('<!-- serverinfo URL %s -->' % (ts_query, ))
-    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    if ts_auth == 'plain':
+        ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    else:
+        ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
     ts_json = ts_response.json()
 
     print('<pre>%s</pre>' % json.dumps(
@@ -1169,13 +1205,17 @@ def page_status():
 
     print('<h2>Input Status</h2>')
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
+    ts_auth = MY_SETTINGS.get(SETTINGS_SECTION, TS_AUTH)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
     ts_query = '%s/%s' % (
         ts_url,
         TS_URL_STI,
     )
-    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    if ts_auth == 'plain':
+        ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    else:
+        ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
     print('<!-- status inputs URL %s -->' % (ts_query, ))
     if ts_response.status_code == 200:
         ts_json = ts_response.json()
@@ -1191,7 +1231,10 @@ def page_status():
         ts_url,
         TS_URL_STC,
     )
-    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    if ts_auth == 'plain':
+        ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+    else:
+        ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
     #print('<!-- status connections URL %s -->' % (ts_query, ))
     if ts_response.status_code == 200:
         ts_json = ts_response.json()
