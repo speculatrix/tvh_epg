@@ -104,6 +104,8 @@ SH_LOGO = 'sh_ch_logo'
 TS_AUTH = 'auth_plain_digest'
 TS_PASS = 'ts_pass'
 TS_PAUTH = 'ts_pauth'
+TS_PROF_STRM = 'profile_strm'
+TS_PROF_CAST = 'profile_chromecasting'
 TS_URL = 'ts_url'
 TS_URL_ICONS = 'ts_url_icons'
 TS_URL_CAST = 'ts_url_icon_cast'
@@ -150,6 +152,16 @@ SETTINGS_DEFAULTS = {
         TITLE: 'Persistent Auth Token',
         DFLT: TS_PAUTH,
         TYPE: 'password',
+    },
+    TS_PROF_STRM: {
+        TITLE: 'profile for streaming',
+        DFLT: '',
+        TYPE: 'text',
+    },
+    TS_PROF_CAST: {
+        TITLE: 'profile for chromecasting',
+        DFLT: 'chromecast',
+        TYPE: 'text',
     },
     SH_LOGO: {
         TITLE: 'Show Channel Logos',
@@ -546,7 +558,7 @@ def page_channels():
                         else:
                             chan_name_ref = chan_name
                         chan_img_url = '%s/%s.png' % (icon_url, chan_name_ref, )
-                        print('<td width="100px" align="right" class="chan_icon">'
+                        print('<td width="100px" align="right" class="chan_icon">' \
                               '<img src="%s"' % (chan_img_url, ), end='')
                         if icon_width != '' and icon_width != '0':
                             print(' width="%s"' % (icon_width, ), end='')
@@ -588,6 +600,10 @@ def page_chromecast(p_uri, p_cast_device):
 
     browser.close()
 
+    if TS_PROF_CAST in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_CAST) != '':
+        ts_profile = '?profile=%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_CAST), )
+    else:
+        ts_profile = ''
 
     # split the TVH server URL up so we can get its IP address
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
@@ -606,20 +622,23 @@ def page_chromecast(p_uri, p_cast_device):
     ts_ip = socket.gethostbyname(ts_url_parsed.hostname)
     if TS_URL_DVF in p_uri:
         # recordings need to get a username/password
-        full_url = '%s://%s:%s@%s:%s/%s?profile=chromecast' \
+        full_url = '%s://%s:%s@%s:%s/%s%s' \
                    % (ts_url_parsed.scheme,
                       MY_SETTINGS.get(SETTINGS_SECTION, TS_USER),
                       MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS),
                       ts_ip,
                       ts_url_parsed.port,
                       p_uri,
+                      ts_profile,
                      )
     else:
         # live streams use persistent auth
-        full_url = '%s://%s:%s%s?AUTH=%s&profile=chromecast' \
+        full_url = '%s://%s:%s%s%s&AUTH=%s' \
                    % (ts_url_parsed.scheme,
                       ts_ip, ts_url_parsed.port,
-                      p_uri, MY_SETTINGS.get(SETTINGS_SECTION, TS_PAUTH),
+                      p_uri,
+                      ts_profile,
+                      MY_SETTINGS.get(SETTINGS_SECTION, TS_PAUTH),
                      )
 
 
@@ -910,8 +929,13 @@ def page_m3u(p_uuid):
 
     global MY_SETTINGS
 
+    if TS_PROF_STRM in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_STRM) != '':
+        ts_profile = '?profile=%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_STRM), )
+    else:
+        ts_profile = ''
+
     if TS_PAUTH in MY_SETTINGS[SETTINGS_SECTION]:
-        ts_pauth = '?AUTH=%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_PAUTH), )
+        ts_pauth = '&AUTH=%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_PAUTH), )
     else:
         ts_pauth = ''
 
@@ -925,23 +949,26 @@ def page_m3u(p_uuid):
         return
 
     if TS_URL_DVF in p_uuid:
-        # recordings need to get a username/password
-        full_url = '%s://%s:%s@%s:%s/%s?profile=chromecast' \
+        # recordings only work with a username/password
+        full_url = '%s://%s:%s@%s:%s/%s%s' \
                    % (ts_url_parsed.scheme,
                       MY_SETTINGS.get(SETTINGS_SECTION, TS_USER),
                       MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS),
                       ts_url_parsed.hostname,
                       ts_url_parsed.port,
                       p_uuid,
+                      ts_profile,
                      )
     else:
         # live streams use persistent auth
-        full_url = '%s://%s:%s%s%s' \
+        full_url = '%s://%s:%s%s%s%s' \
                % (ts_url_parsed.scheme,
                   ts_url_parsed.hostname,
                   ts_url_parsed.port,
                   p_uuid,
-                  ts_pauth, )
+                  ts_profile,
+                  ts_pauth,
+                 )
 
     print('#EXTM3U')
     print(full_url)
