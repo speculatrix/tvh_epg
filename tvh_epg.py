@@ -108,6 +108,8 @@ MAX_CHANS = 'max_chans'
 TITLE = 'title'
 DFLT = 'default'
 TYPE = 'type'
+ICON_WIDTH = 'forced_icon_width'
+ICON_HEIGHT = 'forced_icon_height'
 
 # default values of the settings when being created
 SETTINGS_DEFAULTS = {
@@ -150,6 +152,16 @@ SETTINGS_DEFAULTS = {
         TITLE: 'Maximum Number Of Channels',
         DFLT: '500',
         TYPE: 'number',
+    },
+    ICON_WIDTH: {
+        TITLE: 'Force icon width to this, 0 for off',
+        DFLT: '',
+        TYPE: 'text',
+    },
+    ICON_HEIGHT: {
+        TITLE: 'Force icon height to this, 0 for off',
+        DFLT: '',
+        TYPE: 'text',
     },
 }
 
@@ -492,6 +504,8 @@ def page_channels():
 ''')
         #ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
         icon_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_ICONS)
+        icon_width = MY_SETTINGS.get(SETTINGS_SECTION, ICON_WIDTH)
+        icon_height = MY_SETTINGS.get(SETTINGS_SECTION, ICON_HEIGHT)
         for chan_name in channel_dict:
             chan = channel_dict[chan_name]
             show_channel = 0
@@ -512,10 +526,13 @@ def page_channels():
                         else:
                             chan_name_ref = chan_name
                         chan_img_url = '%s/%s.png' % (icon_url, chan_name_ref, )
-                        print(
-                            '<td width="100px" align="right" class="chan_icon">'
-                            '<img height="12%%" src="%s" /></td>' %
-                            (chan_img_url, ))
+                        print('<td width="100px" align="right" class="chan_icon">'
+                              '<img src="%s"' % (chan_img_url, ), end='')
+                        if icon_width != '' and icon_width != '0':
+                            print(' width="%s"' % (icon_width, ), end='')
+                        if icon_height != '' and icon_height != '0':
+                            print(' height="%s"' % (icon_height, ), end='')
+                        print(' /></td>')
                     else:
                         print('<td>&nbsp;</td>')
 
@@ -543,7 +560,7 @@ def page_chromecast(p_uri, p_cast_device):
 
     global MY_SETTINGS
 
-    chromecasts, browser = pychromecast.get_chromecasts()
+    (chromecasts, browser) = pychromecast.get_chromecasts()
     if isinstance(chromecasts, tuple):
         chromecasts, browser = chromecasts
     browser.close()
@@ -700,6 +717,8 @@ def page_epg():
         icon_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_ICONS)
         ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
         ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
+        icon_width = MY_SETTINGS.get(SETTINGS_SECTION, ICON_WIDTH)
+        icon_height = MY_SETTINGS.get(SETTINGS_SECTION, ICON_HEIGHT)
 
         # iterate through the channel list by name
         for chan_name in channel_dict:
@@ -722,10 +741,13 @@ def page_epg():
                         else:
                             chan_name_ref = chan_name
                         chan_img_url = '%s/%s.png' % (icon_url, chan_name_ref, )
-                        print(
-                            '<td width="100px" align="right" class="chan_icon">'
-                            '<img height="12%%" src="%s" /></td>' %
-                            (chan_img_url, ))
+                        print('<td width="100px" align="right" class="chan_icon">'
+                              '<img src="%s"' % (chan_img_url, ), end='')
+                        if icon_width != '' and icon_width != '0':
+                            print(' width="%s"' % (icon_width, ), end='')
+                        if icon_height != '' and icon_height != '0':
+                            print(' height="%s"' % (icon_height, ), end='')
+                        print(' /></td>')
                     else:
                         print('<td>&nbsp;</td>')
 
@@ -1118,8 +1140,9 @@ def page_settings():
         print('    </tr>')
 
     print('''    <tr>
-      <td align="center" colspan="2"><input type="reset" value="revert"></td>
-      <td align="center" colspan="2"><input type="submit" name="submit" value="submit" /></td>
+      <td align="center" colspan="2">&nbsp;</td>
+      <td align="center" colspan="1"><input type="submit" name="submit" value="submit" /></td>
+      <td align="center" colspan="1"><input type="reset" value="revert"></td>
     </tr>
   </table>
   </form><br /><br/>
