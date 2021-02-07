@@ -592,10 +592,8 @@ def page_chromecast(p_uri, p_cast_device):
 
     global MY_SETTINGS
 
-    (chromecasts, browser) = pychromecast.get_chromecasts()
-    if isinstance(chromecasts, tuple):
-        chromecasts, browser = chromecasts
-    #browser.close()
+    # start the scanning and hope it'll be done soon
+    chromecasts, browser = pychromecast.get_chromecasts(1, 0, 15) # tries, retry_wait, timeout
 
     if TS_PROF_CAST in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_CAST) != '':
         ts_profile = '?profile=%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_CAST), )
@@ -644,6 +642,7 @@ def page_chromecast(p_uri, p_cast_device):
 
 
     print("<p>Please be patient, scanning for chromecast devices can take up to ten seconds</p>")
+    pychromecast.discovery.stop_discovery(browser)
 
     ####
     # user must choose a device to cast to
@@ -662,14 +661,17 @@ def page_chromecast(p_uri, p_cast_device):
         print('''</select>
 <input type="submit" name="Choose Device" value="Choose Device">
 </form>''')
+
         return
 
     ####
+
     # find the cast device which user chose from friendly name
     print('<br />Debug, finding device with friendly name "%s"<br />' % (p_cast_device, ))
     cast = None
     for cast_dev in chromecasts:
-        if cast_dev.device.friendly_name == p_cast_device:
+        #if cast_dev.device.friendly_name == p_cast_device:
+        if cast_dev.friendly_name == p_cast_device:
             cast = cast_dev
     if cast is None:
         print('Error, couldn\'t find the cast device<br />')
@@ -694,6 +696,7 @@ def page_chromecast(p_uri, p_cast_device):
     print('</pre')
     print('<p>chromecast page completed</p>')
 
+    pychromecast.discovery.stop_discovery(browser)
 
 ##########################################################################################
 def page_epg():
