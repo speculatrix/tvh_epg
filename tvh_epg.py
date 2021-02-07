@@ -595,10 +595,7 @@ def page_chromecast(p_uri, p_cast_device):
     (chromecasts, browser) = pychromecast.get_chromecasts()
     if isinstance(chromecasts, tuple):
         chromecasts, browser = chromecasts
-    browser.close()
-
-
-    browser.close()
+    #browser.close()
 
     if TS_PROF_CAST in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_CAST) != '':
         ts_profile = '?profile=%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_CAST), )
