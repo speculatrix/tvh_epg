@@ -153,14 +153,14 @@ SETTINGS_DEFAULTS = {
         DFLT: '500',
         TYPE: 'number',
     },
-    ICON_WIDTH: {
-        TITLE: 'Force icon width to this, 0 for off',
-        DFLT: '',
-        TYPE: 'text',
-    },
     ICON_HEIGHT: {
         TITLE: 'Force icon height to this, 0 for off',
-        DFLT: '',
+        DFLT: '64',
+        TYPE: 'text',
+    },
+    ICON_WIDTH: {
+        TITLE: 'Force icon width to this, 0 for off',
+        DFLT: '80',
         TYPE: 'text',
     },
 }
