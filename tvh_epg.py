@@ -612,7 +612,7 @@ def page_chromecast(p_uri, p_cast_device):
     print('<p>hostname %s, netloc %s</p>' % (ts_url_parsed.hostname, ts_url_parsed.netloc, ))
 
 
-    print('<br /><br />Debug: uri "%s"<br />' % (p_uri, ))
+    #print('<br /><br />Debug: uri "%s"<br />' % (p_uri, ))
     # now for abominable hacks
     ts_ip = socket.gethostbyname(ts_url_parsed.hostname)
     if TS_URL_DVF in p_uri:
@@ -638,7 +638,7 @@ def page_chromecast(p_uri, p_cast_device):
 
 
 
-    print('fullurl is "%s"<br />' % full_url)
+    #print('fullurl is "%s"<br />' % full_url)
 
 
     print("<p>Please be patient, scanning for chromecast devices can take up to ten seconds</p>")
