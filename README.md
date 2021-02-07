@@ -49,6 +49,10 @@ Create a user for playing media, enabling persistent authentication, and copy of
 * install a web server that can execute CGI-BIN programs, e.g. apache2 with "sudo apt-get install apache2"
 * enable cgi-bin programs e.g. run "sudo a2enmod cgid" 
 * put the tvh_epg.py into /usr/lib/cgi-bin
+* make the config directory
+** this directory is /var/lib/tvh_epg ("sudo mkdir -p /var/lib/tvh_epg)
+** make it group owned by www-data (for example "sudo chown www-data /var/lib/tvh_epg")
+** add group write ("sudo chmod g+ws /var/lib/tvh_epg")
 * access the CGI through your web browser and it will tell you what additional setup is needed
 * if you want channel icons, put them into a directory called TVLogos under the document root
 ** You can get FreeSat icons from https://github.com/Elky666/TVLogos
