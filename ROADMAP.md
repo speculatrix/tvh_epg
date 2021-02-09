@@ -25,6 +25,15 @@
 
 ## Done - in reverse order
 
+20210209
+* can choose streaming profiles
+* can choose digest auth
+* can set page bgcolour
+* can force picon size
+* fixes for latest pychromecast from Pip3
+
+.. with many thanks to dgilbert2 for his ideas and patience
+
 20201125
 * live stream m3u contains the persitent auth token
 * recordings stream m3u contains user:pass
