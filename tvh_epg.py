@@ -115,6 +115,13 @@ DFLT = 'default'
 TYPE = 'type'
 ICON_WIDTH = 'forced_icon_width'
 ICON_HEIGHT = 'forced_icon_height'
+BG_COL_PAGE = 'bg_col_page'
+BG_COL_INPUT = 'bg_col_input'
+
+
+BG_COL_DEF_PAGE = 'f4f4f4'
+BG_COL_DEF_INPUT = 'f8f8f8'
+
 
 # default values of the settings when being created
 SETTINGS_DEFAULTS = {
@@ -181,6 +188,16 @@ SETTINGS_DEFAULTS = {
     ICON_WIDTH: {
         TITLE: 'Force icon width to this, 0 for off',
         DFLT: '80',
+        TYPE: 'text',
+    },
+    BG_COL_PAGE: {
+        TITLE: 'page background colour',
+        DFLT: BG_COL_DEF_PAGE,
+        TYPE: 'text',
+    },
+    BG_COL_INPUT: {
+        TITLE: 'input field background colour',
+        DFLT: BG_COL_DEF_INPUT,
         TYPE: 'text',
     },
 }
@@ -1309,6 +1326,16 @@ def m3u_page_header():
 def html_page_header():
     '''standard html page header'''
 
+    global MY_SETTINGS
+
+    bg_col_page = BG_COL_DEF_PAGE
+    if BG_COL_PAGE in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_PAGE) != '':
+        bg_col_page = MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_PAGE)
+
+    bg_col_input = BG_COL_DEF_INPUT
+    if BG_COL_INPUT in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_INPUT) != '':
+        bg_col_input = MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_INPUT)
+
     #print('Content-Type: text/plain\n')                # plain text for extreme debugging
     print('Content-Type: text/html; charset=utf-8\n')
     print('''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
@@ -1320,9 +1347,16 @@ def html_page_header():
   <head>
     <title>TVH EPG</title>
     <meta http-equiv="refresh" content="600;" />
-
+    <meta charset="utf-8"/>
     <style type="text/css">
-    print('<meta charset="utf-8"/>')
+
+    body {
+        background-color: #%s;
+    }
+
+    input {
+        background-color: #%s;
+    }
 
     table {
         border-collapse: collapse;
@@ -1331,13 +1365,14 @@ def html_page_header():
 
     table td, table th {
         border: 1px solid black;
+        background-color: #%s;
     }
 
     .epg_row
     {
         vertical-align: top;    /* Makes sure all the divs are correctly aligned. */
-        width: 100%;
-        height: 100%;
+        width: 100%%;
+        height: 100%%;
         display: inline-flex;   /* prevents wrapping */
     }
     .epg_next
@@ -1404,7 +1439,7 @@ def html_page_header():
 
   </head>
 <body>
-''')
+''' % (bg_col_page, bg_col_input, bg_col_page, ))
 
     print('<a href="/python_errors/?C=M;O=A" target="_new">'
           '/python_errors (new window)</a><br /><br />')
