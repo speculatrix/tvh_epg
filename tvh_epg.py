@@ -152,7 +152,7 @@ SETTINGS_DEFAULTS = {
     },
     TS_AUTH: {
         TITLE:  'Authentication, plain or digest',
-        DFLT:   'digest',
+        DFLT:   'plain',
         TYPE:   'text'
     },
     TS_PAUTH: {
