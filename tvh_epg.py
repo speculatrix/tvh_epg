@@ -162,7 +162,7 @@ SETTINGS_DEFAULTS = {
     },
     TS_PROF_STRM: {
         TITLE: 'profile for streaming',
-        DFLT: '',
+        DFLT: 'default',
         TYPE: 'text',
     },
     TS_PROF_CAST: {
