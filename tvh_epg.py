@@ -969,15 +969,13 @@ def page_m3u(p_uuid):
 
     if TS_URL_DVF in p_uuid:
         # need very specific form of URL to allow user:pass auth to work
-        play_stripped = p_uuid[5:]  # strip /play off front
-        #full_url = '%s://%s:%s@%s:%s/%s' \
         full_url = '%s://%s:%s@%s:%s/%s%s' \
                    % (ts_url_parsed.scheme,
                       MY_SETTINGS.get(SETTINGS_SECTION, TS_USER),
                       MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS),
                       ts_url_parsed.hostname,
                       ts_url_parsed.port,
-                      play_stripped,
+                      p_uuid,
                       ts_profile,
                      )
     else:
@@ -1102,7 +1100,7 @@ def page_recordings():
                 print(TD_EMPTY_CELL)
 
             if 'title' in entry and 'eng' in entry['title']:
-                print('<td><a href="?page=m3u&amp;uuid=play/%s" download="tvheadend.m3u">%s</a>'
+                print('<td><a href="?page=m3u&amp;uuid=%s" download="tvheadend.m3u">%s</a>'
                       % (entry['url'], entry['title']['eng'], ))
                 if CAST_SUPPORT:
                     print('<br /><a href="?page=chromecast&uri=%s"><img src="%s" /></a>' % \
