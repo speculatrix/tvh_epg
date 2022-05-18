@@ -448,7 +448,7 @@ def get_channel_dict():
         # case insensitive sort of channel list
         for chan in channel_list_sorted:
             # ... produces an ordered dict
-            #print('adding %s<br />' % (chan, ))
+            #print('adding %s<br >' % (chan, ))
             ordered_channel_map[chan] = channel_map[chan]
 
     return ordered_channel_map
@@ -581,14 +581,14 @@ def page_channels():
                             print(' width="%s"' % (icon_width, ), end='')
                         if icon_height != '' and icon_height != '0':
                             print(' height="%s"' % (icon_height, ), end='')
-                        print(' /></td>')
+                        print(' ></td>')
                     else:
                         print('<td>&nbsp;</td>')
 
                 play_url = '?page=m3u&amp;uuid=/%s/%s' % (TS_URL_STR, chan['uuid'], )
                 print('<td><a href="%s" download="tvheadend.m3u">%s</a>' % (play_url, chan_name, ))
                 if CAST_SUPPORT:
-                    print('<br /><a href="?page=chromecast&uri=/%s/%s"><img src="%s" /></a>' % \
+                    print('<br ><a href="?page=chromecast&amp;uri=/%s/%s"><img src="%s" alt="chromecast URL" ></a>' % \
                           (TS_URL_STR,
                            chan['uuid'],
                            MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
@@ -631,7 +631,7 @@ def page_chromecast(p_uri, p_cast_device):
     print('<p>hostname %s, netloc %s</p>' % (ts_url_parsed.hostname, ts_url_parsed.netloc, ))
 
 
-    #print('<br /><br />Debug: uri "%s"<br />' % (p_uri, ))
+    #print('<br ><br >Debug: uri "%s"<br >' % (p_uri, ))
     # now for abominable hacks
     ts_ip = socket.gethostbyname(ts_url_parsed.hostname)
     if TS_URL_DVF in p_uri:
@@ -657,7 +657,7 @@ def page_chromecast(p_uri, p_cast_device):
 
 
 
-    #print('fullurl is "%s"<br />' % full_url)
+    #print('fullurl is "%s"<br >' % full_url)
 
 
     print("<p>Please be patient, scanning for chromecast devices can take up to ten seconds</p>")
@@ -686,14 +686,14 @@ def page_chromecast(p_uri, p_cast_device):
     ####
 
     # find the cast device which user chose from friendly name
-    print('<br />Debug, finding device with friendly name "%s"<br />' % (p_cast_device, ))
+    print('<br >Debug, finding device with friendly name "%s"<br >' % (p_cast_device, ))
     cast = None
     for cast_dev in chromecasts:
         if cast_dev.device.friendly_name == p_cast_device:
         #if cast_dev.friendly_name == p_cast_device:
             cast = cast_dev
     if cast is None:
-        print('Error, couldn\'t find the cast device<br />')
+        print('Error, couldn\'t find the cast device<br >')
         return
 
     ####
@@ -736,23 +736,26 @@ def page_epg():
     channel_tag = get_channeltag_grid()
     cdl = len(channel_dict)
     if cdl:
-        print('  <form method="get" action="">')
-        print("<b>Tag filters</b>:")
+        print("<p><b>Tag filters</b>:</p>")
+        print('<form method="get" action="">')
         for tag in channel_tag['entries']:
             if tag['uuid'] in p_tag:
                 checked = ' checked'
             else:
                 checked = ''
             print(
-                '<input type="checkbox" name="tag" value="%s" %s/>%s&nbsp;&nbsp;'
+                #'    <input type="checkbox" name="tag" value="%s" %s/>%s&nbsp;&nbsp;'
+                '    <div><input type="checkbox" name="tag" value="%s" %s>%s&nbsp;&nbsp;</div>'
                 % (
                     tag['uuid'],
                     checked,
                     tag['name'],
                 ))
-        print('''    <input type="hidden" name="page" value="epg" />
-    <input type="submit" name="apply" value="apply" />
-  </form>''')
+        print('''    <input type="hidden" name="page" value="epg" >
+    <input type="submit" name="apply" value="apply" >
+  </form>
+''')
+#</p>
 
         print('''<p><b>Channel count: %d</b></p>
 <p>Maximum number of channels viewable %s</p>
@@ -766,7 +769,7 @@ def page_epg():
     <tr>''')
         if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
             print('      <th width="100px">Channel Logo</th>')
-        print('''       <th>Channel Name</th>
+        print('''      <th>Channel Name</th>
       <th>Channel Number</th>
     </tr>
 ''')
@@ -806,16 +809,16 @@ def page_epg():
                             print(' width="%s"' % (icon_width, ), end='')
                         if icon_height != '' and icon_height != '0':
                             print(' height="%s"' % (icon_height, ), end='')
-                        print(' /></td>')
+                        print(' alt="channel icon" ></td>')
                     else:
                         print('<td>&nbsp;</td>')
 
                 play_url = '?page=m3u&amp;uuid=/%s/%s' % (TS_URL_STR, chan['uuid'], )
                 print('      <td width="100px" align="right"><a href="%s" '
-                      'download="tvheadend.m3u">%s</a> <br />%d' \
+                      'download="tvheadend.m3u">%s</a>\n      <br >\n      %d' \
                       % (play_url, chan_name, chan['number']))
                 if CAST_SUPPORT:
-                    print('<br /><a href="?page=chromecast&uri=/%s/%s"><img src="%s" /></a>' % \
+                    print('      <br >\n      <a href="?page=chromecast&amp;uri=/%s/%s"><img src="%s" alt="chromecast icon" ></a>' % \
                           (TS_URL_STR,
                            chan['uuid'],
                            MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
@@ -829,12 +832,12 @@ def page_epg():
                     TS_URL_EPG,
                     chan['uuid'],
                 )
-                print('<!-- channel EPG URL %s -->' % (ts_query, ))
+                print('      <!-- channel EPG URL %s -->' % (ts_query, ))
                 if ts_auth == 'plain':
                     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
                 else:
                     ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
-                print('<!-- requests.response code %d -->' % (ts_response.status_code, ))
+                print('      <!-- requests.response code %d -->' % (ts_response.status_code, ))
                 ts_text = ts_response.text
                 #print('<td><pre>Extreme Debug!\n\n%s\n<pre></td>' % (ts_text,))
                 ts_json = json.loads(ts_text, strict=False)
@@ -842,7 +845,7 @@ def page_epg():
                 if len(ts_json['entries']):
                     #chan[EPG] = ts_json['entries']
                     print(
-                        '       <td valign="top" nowrap width="1600px"><div class="epg_row">'
+                        '      <td valign="top" nowrap width="1600px">\n      <div class="epg_row">'
                     )
 
                     entry_num = 0
@@ -857,10 +860,10 @@ def page_epg():
                             else:
                                 title = '</i>Untitled</i>'
 
-                            if 'summary' in entry:
-                                summary = entry['summary']
+                            if 'subtitle' in entry:
+                                subtitle = entry['subtitle']
                             else:
-                                summary = ''
+                                subtitle = ''
 
                             duration = time_stop - time_start
                             time_left = duration
@@ -871,16 +874,15 @@ def page_epg():
                             if time_offset < 0:
                                 time_left = time_stop - epoch_time
                                 box_width = time_left / SECS_P_PIXEL
-                                print('<div class="epg_now" style="width: '
+                                print('        <div class="epg_now" style="width: '
                                       '%dpx; max-width: %dpx">' % (
                                           box_width,
                                           box_width,
                                       ))
                             elif entry_num == 0:
                                 width_offset = time_offset / SECS_P_PIXEL
-                                print(
-                                    '<div class="epg_none" style="width: %dpx; '
-                                    'max-width: %dpx">%d</div>' % (
+                                print('        <div class="epg_none" style="width: %dpx; '
+                                    'max-width: %dpx">%d' % (
                                         width_offset,
                                         width_offset,
                                         width_offset,
@@ -892,25 +894,25 @@ def page_epg():
                                           box_width,
                                       ))
                             # print the programme details
-                            try:
-                                print(
-                                    '<a title="record this" href="?page=record&amp;event_id=%s"'
-                                    ' target="tvh_epg_record" width="320" height="320">'
-                                    '&reg;</a>&nbsp;<b>%s</b><br />' % (
-                                        entry['eventId'],
-                                        title,
-                                    ))
-                                print(
-                                    '<div class="tooltip"><span class="tooltiptext">'
-                                    '%s</span>' % (summary, ))
-                            except UnicodeEncodeError as uc_ex:
-                                print('EXCEPTION: "<i>%s - %s</i>"' % (
-                                    type(uc_ex).__name__,
-                                    str(uc_ex),
-                                ), )
+                            print(
+                                 '        <a title="record this" href="?page=record&amp;event_id=%s"'
+                                 ' target="tvh_epg_record" width="320" height="320">'
+                                 '&reg;</a>&nbsp;'
+                                 %  (entry['eventId'], )
+                                 )
+
+                                #print('<b>%s</b><br >' % (
+                            if subtitle != '':
+                                print('<div class="tooltip"><b>%s</b><span class="tooltiptext">%s</span></div><br >'
+                                      % (title, subtitle, )
+                                )
+                            else:
+                                print('<b>%s</b>'
+                                      % (title, )
+                                )
 
                             if time_offset > 0:
-                                print('start %s<br />duration %s'            \
+                                print('start %s<br >duration %s'            \
                                       % (epoch_to_human_duration(time_start), \
                                          secs_to_human(duration), ))
                             else:
@@ -918,11 +920,10 @@ def page_epg():
                                     secs_to_human(time_left),
                                     secs_to_human(duration),
                                 ))
-                            print('      </div></div>')
+                            #print('      </div></div>')
+                            print('      </div>')
                             entry_num += 1
-                    print(
-                        '<div style="clear:both; font-size:1px;"></div></div></td>'
-                    )
+                    print('      <div style="clear:both; font-size:1px;"></div>\n      </td>')
                 else:
                     print('      <td>&nbsp</td>')
                 print('    </tr>')
@@ -1103,7 +1104,7 @@ def page_recordings():
                 print('<td><a href="?page=m3u&amp;uuid=%s" download="tvheadend.m3u">%s</a>'
                       % (entry['url'], entry['title']['eng'], ))
                 if CAST_SUPPORT:
-                    print('<br /><a href="?page=chromecast&uri=%s"><img src="%s" /></a>' % \
+                    print('<br ><a href="?page=chromecast&amp;uri=%s"><img src="%s" ></a>' % \
                           (entry['url'],
                            MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
                           ))
@@ -1184,7 +1185,7 @@ def page_settings():
                 setting_value = str(MY_SETTINGS.get(SETTINGS_SECTION, setting))
             except configparser.NoOptionError:
                 #except configparser.NoOptionError as noex:
-                #print('<p>Exception "%s"<br />' % (noex, ))
+                #print('<p>Exception "%s"<br >' % (noex, ))
                 #print('failed getting value for setting "%s" from config, '
                 #      'using default</p>' % (SETTINGS_DEFAULTS[setting][TITLE], ))
                 if DFLT in SETTINGS_DEFAULTS[setting]:
@@ -1227,7 +1228,7 @@ def page_settings():
       <td align="center" colspan="1"><input type="reset" value="revert"></td>
     </tr>
   </table>
-  </form><br /><br/>
+  </form><br ><br >
 The hostname in the URL for the TVHeadend receiver will be automatically
 turned into an IP address when chromecasting because chromecast devices
 go direct to Google's DNS servers and thus private DNS is ignored.
@@ -1301,17 +1302,17 @@ def page_upgrade_check():
     githash_self = get_githash_self()
     githubhash_self = get_github_hash_self()
 
-    print('<p>github hash of this file %s<br />\n' % (githubhash_self, ))
-    print('git hash of this file %s<br />\n' % (githash_self, ))
+    print('<p>github hash of this file %s<br >\n' % (githubhash_self, ))
+    print('git hash of this file %s<br >\n' % (githash_self, ))
 
     print('<p>')
     if githubhash_self == githash_self:
         print(
-            'Great, this program is the same as the version on github.\n<br />\n'
+            'Great, this program is the same as the version on github.\n<br >\n'
         )
     else:
         print(
-            'This program appears to be out of date, please update it.\n<br />\n'
+            'This program appears to be out of date, please update it.\n<br >\n'
         )
 
     print('</p>')
@@ -1340,16 +1341,17 @@ def html_page_header():
 
     #print('Content-Type: text/plain\n')                # plain text for extreme debugging
     print('Content-Type: text/html; charset=utf-8\n')
-    print('''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-  "http://www.w3.org/TR/html4/loose.dtd">''')
-    print('<meta charset="utf-8"/>')
+    print('''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">''')
+    print('<meta charset="utf-8">')
+    #print('<meta charset="utf-8"/>')
 
     print('''
 <html>
   <head>
+    <meta charset="utf-8" >
     <title>TVH EPG</title>
-    <meta http-equiv="refresh" content="600;" />
-    <meta charset="utf-8"/>
+    <meta http-equiv="refresh" content="600;" >
     <style type="text/css">
 
     body {
@@ -1413,11 +1415,13 @@ def html_page_header():
     .tooltip .tooltiptext {
         visibility: hidden;
         width: 200px;
-        background-color: #888;
-        color: #fff;
+        height: auto;
+        white-space: pre-wrap;
         text-align: center;
         padding: 5px 0;
         border-radius: 6px;
+        color: #fff;
+        background-color: #888;
 
         /* Position the tooltip text */
         position: absolute;
@@ -1443,10 +1447,10 @@ def html_page_header():
 <body>
 ''' % (bg_col_page, bg_col_input, bg_col_page, ))
 
-    print('<a href="/python_errors/?C=M;O=A" target="_new">'
-          '/python_errors (new window)</a><br /><br />')
+    print('<p><a href="/python_errors/?C=M;O=A" target="_new">'
+          '/python_errors (new window)</a></p>')
 
-    print('''
+    print('''<p>
 <b>Menu:</b>&nbsp;<a href="?page=epg">EPG</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=channels">Channels</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=recordings">Recordings</a>&nbsp;&nbsp;&nbsp;
@@ -1455,6 +1459,7 @@ def html_page_header():
 <a href="?page=status">Status</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=upgrade_check">Upgrade Check</a>&nbsp;&nbsp;&nbsp;
 <a href="https://github.com/speculatrix/tvh_epg/blob/master/README.md" target=_new>About</a> (new window)&nbsp;&nbsp;&nbsp;
+</p>
 ''')
 
 
