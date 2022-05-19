@@ -515,7 +515,7 @@ def page_channels():
     cdl = len(channel_dict)
     print('''<p><b>Channel count: %d</b></p>
 <p>Maximum number of channels viewable %s</p>
-<p>Note, the links are the streams, open in VLC
+<p>Note, the channel name links are the streams, open in VLC
 - you can drag and drop the link into a VLC window</p>''' \
 % (cdl, MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
   ))
