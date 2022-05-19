@@ -867,12 +867,12 @@ def page_epg():
                                 subtitle = ''
 
                             duration = time_stop - time_start
-                            time_left = duration
+                            time_left = duration # items by default have the full time left
                             box_width = duration / SECS_P_PIXEL
 
                             # print the boxes containing each program
                             time_offset = time_start - epoch_time
-                            if time_offset < 0:
+                            if time_offset < 0: # current playing item
                                 time_left = time_stop - epoch_time
                                 box_width = time_left / SECS_P_PIXEL
                                 print('        <div class="epg_now" style="width: '
@@ -888,7 +888,7 @@ def page_epg():
                                         width_offset,
                                         width_offset,
                                     ))
-                            else:
+                            else: # future item
                                 print('<div class="epg_next" style="width: '
                                       '%dpx; max-width: %dpx">' % (
                                           box_width,
