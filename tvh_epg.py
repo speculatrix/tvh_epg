@@ -861,6 +861,11 @@ def page_epg():
                         entry_num += 1
                         time_start = int(entry['start'])
                         time_stop = int(entry['stop'])
+
+                        if entry_num == 9999:
+                            time_start += 600   # fake a gap
+                            time_stop -= 600   # fake a gap
+
                         duration = time_stop - time_start
 
                         #print(f'<div>epoch_time { epoch_time }<br>time_start { time_start }<br>time stop { time_stop }<br>duration { duration }</div>')
@@ -874,13 +879,9 @@ def page_epg():
                             continue
 
                         # prevent overly long program making page too wide by narrowing
-                        if time_stop - epoch_time >= MAX_FUTURE:
-                            time_stop = epoch_time + MAX_FUTURE
-                            duration = time_stop - time_start
-
-                        if entry_num == 9999:
-                            time_start += 600   # fake a gap
-                            time_stop -= 600   # fake a gap
+                        #if time_stop - epoch_time >= MAX_FUTURE:
+                        #    time_stop = epoch_time + MAX_FUTURE
+                        #    duration = time_stop - time_start
 
                         title = entry['title'] if 'title' in entry else '</i>Untitled</i>'
                         subtitle = entry['subtitle'] if 'subtitle' in entry else ''
