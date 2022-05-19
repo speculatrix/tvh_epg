@@ -819,7 +819,7 @@ def page_epg():
                       'download="tvheadend.m3u">%s</a>\n      <br>\n      %d' \
                       % (play_url, input_form_escape(chan_name), chan['number']))
                 if CAST_SUPPORT:
-                    print('      <br>\n      <a href="?page=chromecast&amp;uri=/%s/%s"><img src="%s" alt="chromecast icon"></a>' % \
+                    print('      <br>\n      <a title="chromecast this" href="?page=chromecast&amp;uri=/%s/%s"><img src="%s" alt="chromecast icon"></a>' % \
                           (TS_URL_STR,
                            chan['uuid'],
                            MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
