@@ -83,7 +83,8 @@ MAX_FUTURE = 9000  # 2.5 hours - how far into the future to show a prog
 
 INPUT_FORM_ESCAPE_TABLE = {
     '"': "&quot;",
-    "'": "&apos;",
+    "'": "&rsquo;",
+    "&": "&amp;",
 }
 
 URL_ESCAPE_TABLE = {
@@ -448,7 +449,7 @@ def get_channel_dict():
         # case insensitive sort of channel list
         for chan in channel_list_sorted:
             # ... produces an ordered dict
-            #print('adding %s<br >' % (chan, ))
+            #print('adding %s<br>' % (chan, ))
             ordered_channel_map[chan] = channel_map[chan]
 
     return ordered_channel_map
@@ -581,14 +582,14 @@ def page_channels():
                             print(' width="%s"' % (icon_width, ), end='')
                         if icon_height != '' and icon_height != '0':
                             print(' height="%s"' % (icon_height, ), end='')
-                        print(' ></td>')
+                        print('></td>')
                     else:
                         print('<td>&nbsp;</td>')
 
                 play_url = '?page=m3u&amp;uuid=/%s/%s' % (TS_URL_STR, chan['uuid'], )
-                print('<td><a href="%s" download="tvheadend.m3u">%s</a>' % (play_url, chan_name, ))
+                print('<td><a href="%s" download="tvheadend.m3u">%s</a>' % (play_url, input_form_escape(chan_name), ))
                 if CAST_SUPPORT:
-                    print('<br ><a href="?page=chromecast&amp;uri=/%s/%s"><img src="%s" alt="chromecast URL" ></a>' % \
+                    print('<br><a href="?page=chromecast&amp;uri=/%s/%s"><img src="%s" alt="chromecast URL"></a>' % \
                           (TS_URL_STR,
                            chan['uuid'],
                            MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
@@ -631,7 +632,7 @@ def page_chromecast(p_uri, p_cast_device):
     print('<p>hostname %s, netloc %s</p>' % (ts_url_parsed.hostname, ts_url_parsed.netloc, ))
 
 
-    #print('<br ><br >Debug: uri "%s"<br >' % (p_uri, ))
+    #print('<br><br>Debug: uri "%s"<br>' % (p_uri, ))
     # now for abominable hacks
     ts_ip = socket.gethostbyname(ts_url_parsed.hostname)
     if TS_URL_DVF in p_uri:
@@ -657,7 +658,7 @@ def page_chromecast(p_uri, p_cast_device):
 
 
 
-    #print('fullurl is "%s"<br >' % full_url)
+    #print('fullurl is "%s"<br>' % full_url)
 
 
     print("<p>Please be patient, scanning for chromecast devices can take up to ten seconds</p>")
@@ -686,14 +687,14 @@ def page_chromecast(p_uri, p_cast_device):
     ####
 
     # find the cast device which user chose from friendly name
-    print('<br >Debug, finding device with friendly name "%s"<br >' % (p_cast_device, ))
+    print('<br>Debug, finding device with friendly name "%s"<br>' % (p_cast_device, ))
     cast = None
     for cast_dev in chromecasts:
         if cast_dev.device.friendly_name == p_cast_device:
         #if cast_dev.friendly_name == p_cast_device:
             cast = cast_dev
     if cast is None:
-        print('Error, couldn\'t find the cast device<br >')
+        print('Error, couldn\'t find the cast device<br>')
         return
 
     ####
@@ -751,8 +752,8 @@ def page_epg():
                     checked,
                     tag['name'],
                 ))
-        print('''    <input type="hidden" name="page" value="epg" >
-    <input type="submit" name="apply" value="apply" >
+        print('''    <input type="hidden" name="page" value="epg">
+    <input type="submit" name="apply" value="apply">
   </form>
 ''')
 #</p>
@@ -809,16 +810,16 @@ def page_epg():
                             print(' width="%s"' % (icon_width, ), end='')
                         if icon_height != '' and icon_height != '0':
                             print(' height="%s"' % (icon_height, ), end='')
-                        print(' alt="channel icon" ></td>')
+                        print(' alt="channel icon"></td>')
                     else:
                         print('<td>&nbsp;</td>')
 
                 play_url = '?page=m3u&amp;uuid=/%s/%s' % (TS_URL_STR, chan['uuid'], )
                 print('      <td width="100px" align="right"><a href="%s" '
-                      'download="tvheadend.m3u">%s</a>\n      <br >\n      %d' \
-                      % (play_url, chan_name, chan['number']))
+                      'download="tvheadend.m3u">%s</a>\n      <br>\n      %d' \
+                      % (play_url, input_form_escape(chan_name), chan['number']))
                 if CAST_SUPPORT:
-                    print('      <br >\n      <a href="?page=chromecast&amp;uri=/%s/%s"><img src="%s" alt="chromecast icon" ></a>' % \
+                    print('      <br>\n      <a href="?page=chromecast&amp;uri=/%s/%s"><img src="%s" alt="chromecast icon"></a>' % \
                           (TS_URL_STR,
                            chan['uuid'],
                            MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
@@ -894,36 +895,34 @@ def page_epg():
                                           box_width,
                                       ))
                             # print the programme details
-                            print(
-                                 '        <a title="record this" href="?page=record&amp;event_id=%s"'
+                            print('          <a title="record this" href="?page=record&amp;event_id=%s"'
                                  ' target="tvh_epg_record" width="320" height="320">'
                                  '&reg;</a>&nbsp;'
                                  %  (entry['eventId'], )
                                  )
 
-                                #print('<b>%s</b><br >' % (
                             if subtitle != '':
-                                print('<div class="tooltip"><b>%s</b><span class="tooltiptext">%s</span></div><br >'
-                                      % (title, subtitle, )
+                                print('          <div class="tooltip"><b>%s</b><span class="tooltiptext">%s</span></div><br>'
+                                      % (input_form_escape(title), input_form_escape(subtitle), )
                                 )
                             else:
-                                print('<b>%s</b>'
-                                      % (title, )
+                                print('          <b>%s</b><br>'
+                                      % (input_form_escape(title), )
                                 )
 
                             if time_offset > 0:
-                                print('start %s<br >duration %s'            \
+                                print('          start %s<br>duration %s'            \
                                       % (epoch_to_human_duration(time_start), \
                                          secs_to_human(duration), ))
                             else:
-                                print('%s left of %s' % (
+                                print('          left %s<br>duration %s' % (
                                     secs_to_human(time_left),
                                     secs_to_human(duration),
                                 ))
-                            #print('      </div></div>')
-                            print('      </div>')
+                            #print('      </div>\n    </div>')
+                            print('        </div>')
                             entry_num += 1
-                    print('      <div style="clear:both; font-size:1px;"></div>\n      </td>')
+                    print('      <div style="clear:both; font-size:1px;"></div>\n      </div>\n      </td>')
                 else:
                     print('      <td>&nbsp</td>')
                 print('    </tr>')
@@ -1102,9 +1101,9 @@ def page_recordings():
 
             if 'title' in entry and 'eng' in entry['title']:
                 print('<td><a href="?page=m3u&amp;uuid=%s" download="tvheadend.m3u">%s</a>'
-                      % (entry['url'], entry['title']['eng'], ))
+                      % (entry['url'], input_form_escape(entry['title']['eng']), ))
                 if CAST_SUPPORT:
-                    print('<br ><a href="?page=chromecast&amp;uri=%s"><img src="%s" ></a>' % \
+                    print('<br><a href="?page=chromecast&amp;uri=%s"><img src="%s"></a>' % \
                           (entry['url'],
                            MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
                           ))
@@ -1185,7 +1184,7 @@ def page_settings():
                 setting_value = str(MY_SETTINGS.get(SETTINGS_SECTION, setting))
             except configparser.NoOptionError:
                 #except configparser.NoOptionError as noex:
-                #print('<p>Exception "%s"<br >' % (noex, ))
+                #print('<p>Exception "%s"<br>' % (noex, ))
                 #print('failed getting value for setting "%s" from config, '
                 #      'using default</p>' % (SETTINGS_DEFAULTS[setting][TITLE], ))
                 if DFLT in SETTINGS_DEFAULTS[setting]:
@@ -1228,7 +1227,7 @@ def page_settings():
       <td align="center" colspan="1"><input type="reset" value="revert"></td>
     </tr>
   </table>
-  </form><br ><br >
+  </form><br><br>
 The hostname in the URL for the TVHeadend receiver will be automatically
 turned into an IP address when chromecasting because chromecast devices
 go direct to Google's DNS servers and thus private DNS is ignored.
@@ -1302,17 +1301,17 @@ def page_upgrade_check():
     githash_self = get_githash_self()
     githubhash_self = get_github_hash_self()
 
-    print('<p>github hash of this file %s<br >\n' % (githubhash_self, ))
-    print('git hash of this file %s<br >\n' % (githash_self, ))
+    print('<p>github hash of this file %s<br>\n' % (githubhash_self, ))
+    print('git hash of this file %s<br>\n' % (githash_self, ))
 
     print('<p>')
     if githubhash_self == githash_self:
         print(
-            'Great, this program is the same as the version on github.\n<br >\n'
+            'Great, this program is the same as the version on github.\n<br>\n'
         )
     else:
         print(
-            'This program appears to be out of date, please update it.\n<br >\n'
+            'This program appears to be out of date, please update it.\n<br>\n'
         )
 
     print('</p>')
@@ -1339,19 +1338,20 @@ def html_page_header():
     if BG_COL_INPUT in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_INPUT) != '':
         bg_col_input = MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_INPUT)
 
+    # finalise tcp header
     #print('Content-Type: text/plain\n')                # plain text for extreme debugging
-    print('Content-Type: text/html; charset=utf-8\n')
-    print('''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-   "http://www.w3.org/TR/html4/strict.dtd">''')
-    print('<meta charset="utf-8">')
-    #print('<meta charset="utf-8"/>')
+    print('Content-Type: text/html; charset=UTF-8\n')
 
-    print('''
-<html>
+    # begin html page
+    #print('''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" http://www.w3.org/TR/html4/strict.dtd">''')
+    print('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">')
+    #print('<meta charset="UTF-8">')
+
+    print('''<html>
   <head>
-    <meta charset="utf-8" >
+    <meta charset="UTF-8">
     <title>TVH EPG</title>
-    <meta http-equiv="refresh" content="600;" >
+    <meta http-equiv="refresh" content="600;">
     <style type="text/css">
 
     body {
@@ -1409,6 +1409,7 @@ def html_page_header():
     .tooltip {
         position: relative;
         display: inline-block;
+        white-space: pre-wrap;
     }
 
     /* Tooltip text */
