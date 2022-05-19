@@ -902,8 +902,8 @@ def page_epg():
                                  )
 
                             if subtitle != '':
-                                print('          <div class="tooltip"><b>%s</b><span class="tooltiptext">%s</span></div><br>'
-                                      % (input_form_escape(title), input_form_escape(subtitle), )
+                                print('          <div class="tooltip"><b>%s</b><span class="tooltiptext"><u><b>%s</b></u><br>%s</span></div><br>'
+                                      % (input_form_escape(title), input_form_escape(title), input_form_escape(subtitle), )
                                 )
                             else:
                                 print('          <b>%s</b><br>'
