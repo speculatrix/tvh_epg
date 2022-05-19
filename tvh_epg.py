@@ -77,9 +77,14 @@ CGI_PARAMS = cgi.FieldStorage()
 
 EPG = 'epg'
 
-SECS_P_PIXEL = 10  # how many seconds per pixel
+SECS_P_PIXEL = 10   # how many seconds per pixel
 
-MAX_FUTURE = 9000  # 2.5 hours - how far into the future to show a prog
+#MAX_FUTURE = 28800   # 8 hours - how far into the future to show a prog
+#MAX_FUTURE = 18000   # 5 hours - how far into the future to show a prog
+MAX_FUTURE = 14400   # 4 hours - how far into the future to show a prog
+#MAX_PAST = 900      # 15 mins - how much of past programs to show
+MAX_PAST = 720      # 12 mins - how much of past programs to show
+#MAX_PAST = 400      # 15 mins - how much of past programs to show
 
 INPUT_FORM_ESCAPE_TABLE = {
     '"': "&quot;",
@@ -849,79 +854,105 @@ def page_epg():
                         '      <td valign="top" nowrap width="1600px">\n      <div class="epg_row">'
                     )
 
+                    #current_left_time = MAX_PAST / SECS_P_PIXEL # starts at zero secs
+                    current_left_time = 0
                     entry_num = 0
                     for entry in ts_json['entries']:
+                        entry_num += 1
                         time_start = int(entry['start'])
                         time_stop = int(entry['stop'])
+                        duration = time_stop - time_start
 
-                        # don't show far future, stop screen being too wide
-                        if time_start - epoch_time < MAX_FUTURE:
-                            if 'title' in entry:
-                                title = entry['title']
-                            else:
-                                title = '</i>Untitled</i>'
+                        #print(f'<div>epoch_time { epoch_time }<br>time_start { time_start }<br>time stop { time_stop }<br>duration { duration }</div>')
+                        # prevent past programs from showing
+                        if time_stop <= epoch_time:
+                            print('<div>past program</div>')
+                            continue
 
-                            if 'subtitle' in entry:
-                                subtitle = entry['subtitle']
-                            else:
-                                subtitle = ''
+                        # prevent far future programs making page too wide by ending the row
+                        if time_start - epoch_time >= MAX_FUTURE:
+                            continue
 
+                        # prevent overly long program making page too wide by narrowing
+                        if time_stop - epoch_time >= MAX_FUTURE:
+                            time_stop = epoch_time + MAX_FUTURE
                             duration = time_stop - time_start
-                            time_left = duration # items by default have the full time left
+
+                        if entry_num == 9999:
+                            time_start += 600   # fake a gap
+                            time_stop -= 600   # fake a gap
+
+                        title = entry['title'] if 'title' in entry else '</i>Untitled</i>'
+                        subtitle = entry['subtitle'] if 'subtitle' in entry else ''
+
+                        time_until = time_start - epoch_time
+                        time_used = epoch_time - time_start
+                        time_left = time_stop - epoch_time
+
+                        #print(f'<div>duration { duration },<br>time used { time_used },<br>time_left { time_left }</div>')
+                        if time_until > current_left_time:
+                            # gap until next program
+                            box_width = (time_until - current_left_time) / SECS_P_PIXEL
+                            current_left_time = time_until
+                            print('        <div class="epg_none" style="width: '
+                                  '%dpx; max-width: %dpx">GAP</div>' % (
+                                      box_width,
+                                      box_width,
+                                  ), )
+
+                        # print the boxes containing each program
+                        if time_used > 0: # playing item
+                            time_used = MAX_PAST # used time is a fixed width
+                            time_start = epoch_time - MAX_PAST
+                            duration = time_stop - time_start
+                            # make box narrower, not interested in distant past
+                            #if time_used > MAX_PAST:
+                                #time_used = MAX_PAST # used time is a fixed width
+                                #duration = time_stop - time_start
+                                #print(f'<div>duration { duration },<br>time used { time_used },<br>time_left { time_left }</div>')
+                                #time_used = 10
                             box_width = duration / SECS_P_PIXEL
+                            current_left_time += duration
+                            # box for things already started
+                            print('        <div class="epg_now" style="width: '
+                                  '%dpx; max-width: %dpx">' % (
+                                      box_width,
+                                      box_width,
+                                  ), end='')
 
-                            # print the boxes containing each program
-                            time_offset = time_start - epoch_time
-                            if time_offset < 0: # current playing item
-                                time_left = time_stop - epoch_time
-                                box_width = time_left / SECS_P_PIXEL
-                                print('        <div class="epg_now" style="width: '
-                                      '%dpx; max-width: %dpx">' % (
-                                          box_width,
-                                          box_width,
-                                      ))
-                            elif entry_num == 0:
-                                width_offset = time_offset / SECS_P_PIXEL
-                                print('        <div class="epg_none" style="width: %dpx; '
-                                    'max-width: %dpx">%d' % (
-                                        width_offset,
-                                        width_offset,
-                                        width_offset,
-                                    ))
-                            else: # future item
-                                print('<div class="epg_next" style="width: '
-                                      '%dpx; max-width: %dpx">' % (
-                                          box_width,
-                                          box_width,
-                                      ))
-                            # print the programme details
-                            print('          <a title="record this" href="?page=record&amp;event_id=%s"'
-                                 ' target="tvh_epg_record" width="320" height="320">'
-                                 '&reg;</a>&nbsp;'
-                                 %  (entry['eventId'], )
-                                 )
+                        else: # future item
+                            time_left = duration
+                            box_width = duration / SECS_P_PIXEL
+                            current_left_time += duration
+                            print('        <div class="epg_next" style="width: '
+                                  '%dpx; max-width: %dpx">' % (
+                                      box_width,
+                                      box_width,
+                                  ), end='')
+                        # print the programme details
+                        print('<a title="record this" href="?page=record&amp;event_id=%s"'
+                             ' target="tvh_epg_record" width="320" height="320">'
+                             '&reg;</a>&nbsp;'
+                             %  (entry['eventId'], ),
+                             end='')
 
-                            if subtitle != '':
-                                print('          <div class="tooltip"><b>%s</b><span class="tooltiptext"><u><b>%s</b></u><br>%s</span></div><br>'
-                                      % (input_form_escape(title), input_form_escape(title), input_form_escape(subtitle), )
-                                )
-                            else:
-                                print('          <b>%s</b><br>'
-                                      % (input_form_escape(title), )
-                                )
+                        if subtitle != '':
+                            print('          <div class="tooltip"><b>%s</b><span class="tooltiptext"><u><b>%s</b></u><br>%s</span></div>'
+                                  % (input_form_escape(title), input_form_escape(title), input_form_escape(subtitle), ),
+                            end='')
+                        else:
+                            print('          <b>%s</b>'
+                                  % (input_form_escape(title), ),
+                            end='')
 
-                            if time_offset > 0:
-                                print('          start %s<br>duration %s'            \
-                                      % (epoch_to_human_duration(time_start), \
-                                         secs_to_human(duration), ))
-                            else:
-                                print('          left %s<br>duration %s' % (
-                                    secs_to_human(time_left),
-                                    secs_to_human(duration),
-                                ))
-                            #print('      </div>\n    </div>')
-                            print('        </div>')
-                            entry_num += 1
+                        if time_used > 0:
+                            print(f'<br>end { epoch_to_human_duration(time_stop) }'
+                                  f'<br>left { secs_to_human(time_left) }')
+                        else:
+                            print(f'<br>&nbsp;&nbsp;start { epoch_to_human_duration(time_start) }'
+                                  f'<br>length { secs_to_human(duration) }')
+                        #print(f'<br>current_left_time will be { int(current_left_time) }<br>entry_num {entry_num}')
+                        print('        </div>')
                     print('      <div style="clear:both; font-size:1px;"></div>\n      </div>\n      </td>')
                 else:
                     print('      <td>&nbsp</td>')
@@ -1385,13 +1416,15 @@ def html_page_header():
         border: 1px #8080e0;
         border-style: solid;
         float: left;
+        white-space: pre-wrap;
     }
     .epg_now
     {
         background-color: #f0fff0;
         border: 1px #408040;
         border-style: solid;
-        float: left;
+        float: right;
+        white-space: pre-wrap;
     }
     .epg_none
     {
@@ -1399,6 +1432,7 @@ def html_page_header():
         border: 1px #404040;
         border-style: solid;
         float: left;
+        white-space: pre-wrap;
     }
     .chan_icon
     {
@@ -1483,11 +1517,12 @@ def secs_to_human(t_secs):
     if r_days > 0:
         h_days = '%dd, ' % r_days
 
-    #h_time = '%s%02d:%02d:%02d' % (h_days, r_hours, r_mins, r_secs, )
+    #h_time = '%s%02d:%02d:%02d' % (
     h_time = '%s%02d:%02d' % (
         h_days,
         r_hours,
         r_mins,
+        #r_secs,
     )
 
     return h_time
@@ -1622,6 +1657,6 @@ if len(sys.argv) <= 1:
 
 else:
     print('Failed')
-    exit(1)
+    sys.exit(1)
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
