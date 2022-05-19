@@ -815,7 +815,7 @@ def page_epg():
                         print('<td>&nbsp;</td>')
 
                 play_url = '?page=m3u&amp;uuid=/%s/%s' % (TS_URL_STR, chan['uuid'], )
-                print('      <td width="100px" align="right"><a href="%s" '
+                print('      <td width="100px" align="right"><a title="watch live" href="%s" '
                       'download="tvheadend.m3u">%s</a>\n      <br>\n      %d' \
                       % (play_url, input_form_escape(chan_name), chan['number']))
                 if CAST_SUPPORT:
