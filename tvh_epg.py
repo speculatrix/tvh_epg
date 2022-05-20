@@ -938,7 +938,7 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                                        '&reg;</a>&nbsp;')
 
                         if subtitle != '':
-                            print(f'<div class="tooltip">{ record_this }'
+                            print(f'{ record_this }<div class="tooltip">'
                                   f'<b>&mapstoup;{ input_form_escape(title) }</b><span class="tooltiptext">'
                                   f'<u><b>{ input_form_escape(title) }</b></u><br>{ input_form_escape(subtitle) }</span></div>'
                                   , end='')
