@@ -933,9 +933,11 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                                       box_width,
                                   ), end='')
                         # print the programme details
-                        record_this = (f'<a title="record this" href="?page=record&amp;event_id={ entry["eventId"] }"'
-                                       ' target="tvh_epg_record" width="320" height="320">'
-                                       '&reg;</a>&nbsp;')
+                        #record_this = (f'<a title="record this" href="?page=record&amp;event_id={ entry["eventId"] }"'
+                        #               ' target="tvh_epg_record" width="320" height="320">'
+                        #               '&reg;</a>&nbsp;')
+                        record_this = (f'<div class="record_this"><a title="record this" href="?page=record&amp;event_id={ entry["eventId"] }"'
+                                       ' target="tvh_epg_record">&reg;</a>&nbsp;</div>')
 
                         if subtitle != '':
                             print(f'{ record_this }<div class="tooltip">'
@@ -1436,6 +1438,15 @@ def html_page_header():
     {
         background-color: #e0e0e0;
     }
+
+    .record_this {
+        position: relative;
+        display: inline-block;
+        float: top, left;
+        /* width: 320; */
+        /* height: 320; */
+    }
+
     /* https://www.w3schools.com/css/css_tooltip.asp */
     /* Tooltip container */
     .tooltip {
@@ -1449,7 +1460,7 @@ def html_page_header():
     /* Tooltip text */
     .tooltip .tooltiptext {
         visibility: hidden;
-        width: 200px;
+        width: 224px;
         height: auto;
         white-space: pre-wrap;
         text-align: center;
