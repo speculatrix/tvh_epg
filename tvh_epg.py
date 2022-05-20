@@ -600,7 +600,7 @@ def page_channels():
                            MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
                           ))
 
-                print(f'</td>\n      <td>{ chan['number'] }</td>\n        </tr>')
+                print(f'</td>\n      <td>{ chan["number"] }</td>\n        </tr>')
 
         print('</table>')
 
@@ -765,8 +765,11 @@ def page_epg():
 
         print('''<p><b>Channel count: %d</b></p>
 <p>Maximum number of channels viewable %s</p>
-<p>Note, the links are the streams, open in VLC
-- you can drag and drop the link into a VLC window</p>''' \
+<p>Note, the links are the streams, open in VLC;
+you can drag and drop the link into a VLC window.
+<br><br>
+The &mapstoup; character means you can hover the mouse and see the secondary title of the programme.
+</p>''' \
 % (cdl, MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
   ))
 
@@ -931,20 +934,17 @@ def page_epg():
                                       box_width,
                                   ), end='')
                         # print the programme details
-                        print('<a title="record this" href="?page=record&amp;event_id=%s"'
-                             ' target="tvh_epg_record" width="320" height="320">'
-                             '&reg;</a>&nbsp;'
-                             %  (entry['eventId'], ),
-                             end='')
+                        record_this = (f'<a title="record this" href="?page=record&amp;event_id={ entry["eventId"] }"'
+                                       ' target="tvh_epg_record" width="320" height="320">'
+                                       '&reg;</a>&nbsp;')
 
                         if subtitle != '':
-                            print('          <div class="tooltip"><b>%s</b><span class="tooltiptext"><u><b>%s</b></u><br>%s</span></div>'
-                                  % (input_form_escape(title), input_form_escape(title), input_form_escape(subtitle), ),
-                            end='')
+                            print(f'<div class="tooltip">{ record_this }'
+                                  f'<b>&mapstoup;{ input_form_escape(title) }</b><span class="tooltiptext">'
+                                  f'<u><b>{ input_form_escape(title) }</b></u><br>{ input_form_escape(subtitle) }</span></div>'
+                                  , end='')
                         else:
-                            print('          <b>%s</b>'
-                                  % (input_form_escape(title), ),
-                            end='')
+                            print(f'{ record_this }<b>{ input_form_escape(title) }</b>', end='')
 
                         if time_used > 0:
                             print(f'<br>end { epoch_to_human_duration(time_stop) }'
@@ -1442,7 +1442,8 @@ def html_page_header():
     .tooltip {
         position: relative;
         display: inline-block;
-        float: left;
+        /*text-align: top, left;*/
+        float: top, left;
         white-space: pre-wrap;
     }
 
@@ -1578,15 +1579,9 @@ def web_interface():
 
     if p_page == EPG:
         html_page_header()
-
-        #for a in os.environ:
-        #    print("<p>%s = %s</p>" % (a, os.getenv(a)) )
-        #for headername, headervalue in os.environ.iteritems():
-            #if headername.startswith("HTTP_"):
-            #print("<p>%s = %s</p>" % (headername, headervalue, ) )
-
         page_epg()
         html_page_footer()
+
     elif p_page == 'error':
         html_page_header()
         page_error(error_text)
