@@ -814,9 +814,9 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                         chan_img_url = '%s/%s.png' % (icon_url, chan_name_ref, )
                         print('<td width="100px" align="right" class="chan_icon">'
                               '<img src="%s"' % (chan_img_url, ), end='')
-                        if icon_width != '' and icon_width != '0':
+                        if icon_width not in ('', '0'):
                             print(' width="%s"' % (icon_width, ), end='')
-                        if icon_height != '' and icon_height != '0':
+                        if icon_height not in ('', '0'):
                             print(' height="%s"' % (icon_height, ), end='')
                         print(' alt="channel icon"></td>')
                     else:
@@ -827,11 +827,10 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                       'download="tvheadend.m3u">%s</a>&nbsp;&nbsp;&nbsp;(%d)' \
                       % (play_url, input_form_escape(chan_name), chan['number'], ))
                 if CAST_SUPPORT:
-                    print('      <br>\n      <a title="chromecast this" href="?page=chromecast&amp;uri=/%s/%s"><img src="%s" alt="chromecast icon"></a>' % \
-                          (TS_URL_STR,
-                           chan['uuid'],
-                           MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
-                          ))
+                    print('      <br>\n      <a title="chromecast this" href="?page=chromecast&amp;'
+                          f'uri=/{ TS_URL_STR }/{ chan["uuid"] }">'
+                          f'<img src="{ MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST) }" alt="chromecast icon"></a>' 
+                         )
                 print('</td>')
 
 
