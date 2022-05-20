@@ -951,7 +951,7 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                             print(f'<br>end { epoch_to_human_duration(time_stop) }'
                                   f'<br>left { secs_to_human(time_left) }')
                         else:
-                            print(f'<br>&nbsp;&nbsp;start { epoch_to_human_duration(time_start) }'
+                            print(f'<br>&nbsp;&nbsp;&nbsp;start { epoch_to_human_duration(time_start) }'
                                   f'<br>length { secs_to_human(duration) }')
                         #print(f'<br>current_left_time will be { int(current_left_time) }<br>entry_num {entry_num}')
                         print('        </div>')
@@ -1450,7 +1450,8 @@ def html_page_header():
     /* https://www.w3schools.com/css/css_tooltip.asp */
     /* Tooltip container */
     .tooltip {
-        position: relative;
+        position: static;
+        /*position: relative;*/
         display: inline-block;
         /*text-align: top, left;*/
         float: top, left;
