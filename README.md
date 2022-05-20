@@ -81,7 +81,7 @@ See <a href="ROADMAP.md">ROADMAP.md</a>
 <img src="https://raw.githubusercontent.com/speculatrix/tvh_epg/master/epg_sample.png" />
 
 
-## Acknowledgement and thanks
+## Acknowledgement And Thanks
 
 This program only exists because of the awesome developers working on
 https://tvheadend.org
