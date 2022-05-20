@@ -581,12 +581,12 @@ def page_channels():
                         else:
                             chan_name_ref = chan_name
                         chan_img_url = '%s/%s.png' % (icon_url, chan_name_ref, )
-                        print('<td width="100px" align="right" class="chan_icon">' \
-                              '<img src="%s"' % (chan_img_url, ), end='')
-                        if icon_width != '' and icon_width != '0':
-                            print(' width="%s"' % (icon_width, ), end='')
-                        if icon_height != '' and icon_height != '0':
-                            print(' height="%s"' % (icon_height, ), end='')
+                        print(f'<td width="100px" align="right" class="chan_icon">' \
+                              '<img src="{ chan_img_url }"', end='')
+                        if icon_width not in ('', '0'):
+                            print(f' width="{ icon_width }"', end='')
+                        if icon_height not in ('', '0'):
+                            print(f' height="{ icon_height }"', end='')
                         print('></td>')
                     else:
                         print('<td>&nbsp;</td>')
@@ -600,7 +600,7 @@ def page_channels():
                            MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
                           ))
 
-                print('</td>\n      <td>%s</td>\n        </tr>' % (chan['number'], ))
+                print(f'</td>\n      <td>{ chan['number'] }</td>\n        </tr>')
 
         print('</table>')
 
@@ -774,9 +774,9 @@ def page_epg():
         print('''  <table width="1700px">
     <tr>''')
         if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
-            print('      <th width="100px">Channel Logo</th>')
-        print('''      <th>Channel Name</th>
-      <th>Channel Number</th>
+            print('      <th width="100px">Logo</th>')
+        print('''      <th>Channel</th>
+      <th>&nbsp;</th>
     </tr>
 ''')
 
@@ -821,8 +821,8 @@ def page_epg():
 
                 play_url = '?page=m3u&amp;uuid=/%s/%s' % (TS_URL_STR, chan['uuid'], )
                 print('      <td width="100px" align="right"><a title="watch live" href="%s" '
-                      'download="tvheadend.m3u">%s</a>\n      <br>\n      %d' \
-                      % (play_url, input_form_escape(chan_name), chan['number']))
+                      'download="tvheadend.m3u">%s</a>&nbsp;&nbsp;&nbsp;(%d)' \
+                      % (play_url, input_form_escape(chan_name), chan['number'], ))
                 if CAST_SUPPORT:
                     print('      <br>\n      <a title="chromecast this" href="?page=chromecast&amp;uri=/%s/%s"><img src="%s" alt="chromecast icon"></a>' % \
                           (TS_URL_STR,
@@ -1442,6 +1442,7 @@ def html_page_header():
     .tooltip {
         position: relative;
         display: inline-block;
+        float: left;
         white-space: pre-wrap;
     }
 
