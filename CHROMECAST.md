@@ -1,5 +1,11 @@
 # Adding Chromecast Support To TVH_EPG
 
+Note that you need 9.4.0 because any later changes break tvh_epg
+https://github.com/home-assistant-libs/pychromecast/archive/refs/tags/9.4.0.zip
+
+Thanks to https://github.com/dgilbert2 for finding that and letting me know
+
+
 This is the barest details of how to proceed. These instructions will be improved over time.
 
 Note that the web server running this program is on the same network (broadcast

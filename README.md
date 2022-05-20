@@ -65,6 +65,11 @@ same network.
 It's quite slow as the pychromecast library has to listen on the network for
 the chromecast to announce itself.
 
+Note that you need 9.4.0 because any later changes break tvh_epg
+https://github.com/home-assistant-libs/pychromecast/archive/refs/tags/9.4.0.zip
+
+Thanks to https://github.com/dgilbert2 for finding that and letting me know
+
 
 ## roadmap
 
@@ -83,6 +88,7 @@ https://tvheadend.org
 
 And also big thanks to Paulus Schoutsen (<a href="https://github.com/balloob">balloob</a>) for pychromecast
 
+A big thanks to (a href="https://github.com/dgilbert2">dgilbert2</a> for being a patient alpha tested
 
 ## Useful links
 
