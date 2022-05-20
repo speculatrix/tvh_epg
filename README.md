@@ -88,7 +88,7 @@ https://tvheadend.org
 
 And also big thanks to Paulus Schoutsen (<a href="https://github.com/balloob">balloob</a>) for pychromecast
 
-A big thanks to (a href="https://github.com/dgilbert2">dgilbert2</a> for being a patient alpha tested
+A big thanks to (<a href="https://github.com/dgilbert2">dgilbert2</a> for being a patient alpha tested
 
 ## Useful links
 
