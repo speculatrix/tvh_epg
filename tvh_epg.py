@@ -396,11 +396,7 @@ def get_channel_dict():
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
     ts_max_ch = MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
-    ts_query = '%s/%s?limit=%s' % (
-        ts_url,
-        TS_URL_CHN,
-        ts_max_ch,
-    )
+    ts_query = f'{ ts_url }/{ TS_URL_CHN }?limit={ ts_max_ch }'
     if ts_auth == 'plain':
         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     else:
