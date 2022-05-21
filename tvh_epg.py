@@ -143,7 +143,7 @@ SETTINGS_DEFAULTS = {
         TYPE: 'text',
     },
     LOCAL_ICON_DIR: {
-        TITLE: 'Local icon director, if set, checks icon file exists to avoid broken images',
+        TITLE: 'Local icon directory, if set, checks icon file exists to avoid broken images',
         DFLT: '/home/hts/TVLogos/',
         TYPE: 'text',
     },
