@@ -1255,7 +1255,7 @@ def page_settings():
         print('    </tr>')
 
     print('''    <tr>
-      <td align="center" colspan="2">&nbsp;</td>
+      <td align="center" colspan="1">&nbsp;</td>
       <td align="center" colspan="1"><input type="submit" name="submit" value="submit" /></td>
       <td align="center" colspan="1"><input type="reset" value="revert"></td>
     </tr>
