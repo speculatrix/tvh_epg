@@ -811,14 +811,27 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                             chan_name_ref = chan_name[:-2]
                         else:
                             chan_name_ref = chan_name
-                        chan_img_url = f'{ icon_url }/{ chan_name_ref }.png'
-                        print('<td width="100px" align="right" class="chan_icon">'
-                              f'<img src="{ chan_img_url }"', end='')
-                        if icon_width not in ('', '0'):
-                            print(f' width="{ icon_width,}"', end='')
-                        if icon_height not in ('', '0'):
-                            print(f' height="{ icon_height }"', end='')
-                        print(' alt="channel icon"></td>')
+
+                        # it might be possible to skip broken picons if they
+                        # are on the same server and we know where they are
+                        skip_icon = False
+                        if MY_SETTINGS.get(SETTINGS_SECTION, LOCAL_ICON_DIR) != '':
+                            icon_file_name = f'{ MY_SETTINGS.get(SETTINGS_SECTION, LOCAL_ICON_DIR) }/{ chan_name_ref }.png'
+                            if not os.path.exists(icon_file_name):
+                                skip_icon = True
+
+                        print('<td width="100px" align="right" class="chan_icon">')
+                        if skip_icon:
+                            print('&nbsp;')
+                        else:
+                            chan_img_url = f'{ icon_url }/{ chan_name_ref }.png'
+                            print(f'<img src="{ chan_img_url }"', end='')
+                            if icon_width not in ('', '0'):
+                                print(f' width="{ icon_width }"', end='')
+                            if icon_height not in ('', '0'):
+                                print(f' height="{ icon_height }"', end='')
+                            print('>')
+                        print('</td>')
                     else:
                         print('<td>&nbsp;</td>')
 
