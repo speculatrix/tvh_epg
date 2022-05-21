@@ -119,6 +119,7 @@ TS_USER = 'ts_user'
 TITLE = 'title'
 DFLT = 'default'
 TYPE = 'type'
+LOCAL_ICON_DIR = 'local_icon_dir'
 ICON_WIDTH = 'forced_icon_width'
 ICON_HEIGHT = 'forced_icon_height'
 BG_COL_PAGE = 'bg_col_page'
@@ -138,12 +139,17 @@ SETTINGS_DEFAULTS = {
     },
     TS_URL_ICONS: {
         TITLE: 'URL to picons',
-        DFLT: 'http://tvh.eample.com/TVLogos/',
+        DFLT: 'http://tvh.example.com/TVLogos/',
+        TYPE: 'text',
+    },
+    LOCAL_ICON_DIR: {
+        TITLE: 'Local icon director, if set, checks icon file exists to avoid broken images',
+        DFLT: '/home/hts/TVLogos/',
         TYPE: 'text',
     },
     TS_URL_CAST: {
         TITLE: 'URL to chromecast icon',
-        DFLT: 'http://tvh.eample.com/ic_cast_connected_white_24dp.png',
+        DFLT: 'http://tvh.example.com/ic_cast_connected_white_24dp.png',
         TYPE: 'text',
     },
     TS_USER: {
@@ -531,13 +537,7 @@ def page_channels():
                 checked = ' checked'
             else:
                 checked = ''
-            print(
-                '<input type="checkbox" name="tag" value="%s" %s/>%s&nbsp;&nbsp;'
-                % (
-                    tag['uuid'],
-                    checked,
-                    tag['name'],
-                ))
+            print(f'<input type="checkbox" name="tag" value="{ tag["uuid"] }" { checked }/>{ tag["name"] }&nbsp;&nbsp;')
         print('''    <input type="hidden" name="page" value="channels" />
     <input type="submit" name="apply" value="apply" />
   </form>''')
@@ -577,14 +577,27 @@ def page_channels():
                             chan_name_ref = chan_name[:-2]
                         else:
                             chan_name_ref = chan_name
-                        chan_img_url = f'{ icon_url }/{ chan_name_ref }.png'
-                        print(f'<td width="100px" align="right" class="chan_icon">' \
-                              f'<img src="{ chan_img_url }"', end='')
-                        if icon_width not in ('', '0'):
-                            print(f' width="{ icon_width }"', end='')
-                        if icon_height not in ('', '0'):
-                            print(f' height="{ icon_height }"', end='')
-                        print('></td>')
+
+                        # it might be possible to skip broken picons if they
+                        # are on the same server and we know where they are
+                        skip_icon = False
+                        if MY_SETTINGS.get(SETTINGS_SECTION, LOCAL_ICON_DIR) != '':
+                            icon_file_name = f'{ MY_SETTINGS.get(SETTINGS_SECTION, LOCAL_ICON_DIR) }/{ chan_name_ref }.png'
+                            if not os.path.exists(icon_file_name):
+                                skip_icon = True
+
+                        print('<td width="100px" align="right" class="chan_icon">')
+                        if skip_icon:
+                            print('&nbsp;')
+                        else:
+                            chan_img_url = f'{ icon_url }/{ chan_name_ref }.png'
+                            print(f'<img src="{ chan_img_url }"', end='')
+                            if icon_width not in ('', '0'):
+                                print(f' width="{ icon_width }"', end='')
+                            if icon_height not in ('', '0'):
+                                print(f' height="{ icon_height }"', end='')
+                            print('>')
+                        print('</td>')
                     else:
                         print('<td>&nbsp;</td>')
 
