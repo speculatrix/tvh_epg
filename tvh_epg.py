@@ -143,7 +143,7 @@ SETTINGS_DEFAULTS = {
         TYPE: 'text',
     },
     LOCAL_ICON_DIR: {
-        TITLE: 'Local icon directory, if set, checks icon file exists to avoid broken images',
+        TITLE: 'Local icon directory, if set, checks icon file exists<br>(to avoid broken images)',
         DFLT: '/home/hts/TVLogos/',
         TYPE: 'text',
     },
@@ -832,9 +832,8 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                         print('<td>&nbsp;</td>')
 
                 play_url = f'?page=m3u&amp;uuid=/{ TS_URL_STR }/{ chan["uuid"] }'
-                print('      <td width="100px" align="right"><a title="watch live" href="%s" '
-                      'download="tvheadend.m3u">%s</a>&nbsp;&nbsp;&nbsp;(%d)' \
-                      % (play_url, input_form_escape(chan_name), chan['number'], ))
+                print(f'      <td width="100px" align="right"><a title="watch live" href="{ play_url }" '
+                      f'download="tvheadend.m3u">{ input_form_escape(chan_name) }</a>&nbsp;&nbsp;&nbsp;({ chan["number"] })' )
                 if CAST_SUPPORT:
                     print('      <br>\n      <a title="chromecast this" href="?page=chromecast&amp;'
                           f'uri=/{ TS_URL_STR }/{ chan["uuid"] }">'
@@ -924,20 +923,16 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                             current_left_time += duration
                             # box for things already started
                             print('        <div class="epg_now" style="width: '
-                                  '%dpx; max-width: %dpx">' % (
-                                      box_width,
-                                      box_width,
-                                  ), end='')
+                                  f'{ box_width }px; max-width: { box_width }px">'
+                                  , end='')
 
                         else: # future item
                             time_left = duration
                             box_width = duration / SECS_P_PIXEL
                             current_left_time += duration
                             print('        <div class="epg_next" style="width: '
-                                  '%dpx; max-width: %dpx">' % (
-                                      box_width,
-                                      box_width,
-                                  ), end='')
+                                  f'{ box_width }px; max-width: { box_width }px">'
+                                  , end='')
                         # print the programme details
                         #record_this = (f'<a title="record this" href="?page=record&amp;event_id={ entry["eventId"] }"'
                         #               ' target="tvh_epg_record" width="320" height="320">'
@@ -1238,7 +1233,7 @@ def page_settings():
           '<input type="hidden" name="page" value="settings" />'    \
           '<table>'                                                 \
           '  <tr>'                                                  \
-          '    <th align="right">Key</th>'                          \
+          #'    <th align="right">Key</th>'                          \
           '    <th align="right">Setting</th>'                      \
           '    <th>Value</th>'                                      \
           '    <th>Default</th>\n'                                  \
@@ -1246,9 +1241,8 @@ def page_settings():
 
     for setting in sorted(SETTINGS_DEFAULTS):
         print('    <tr>')
-        print('      <td align="right">%s&nbsp;&nbsp;</td>' % (setting, ))
-        print('      <td align="right">%s&nbsp;&nbsp;</td>' %
-              (SETTINGS_DEFAULTS[setting][TITLE], ))
+        #print(f'      <td align="right">{ setting }&nbsp;&nbsp;</td>')
+        print(f'      <td align="right">{ SETTINGS_DEFAULTS[setting][TITLE] }&nbsp;&nbsp;</td>')
         if setting in MY_SETTINGS[SETTINGS_SECTION]:
             setting_value = MY_SETTINGS.get(SETTINGS_SECTION, setting)
         else:
