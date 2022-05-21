@@ -232,10 +232,9 @@ def check_load_config_file():
     try:
         cdir_stat = os.stat(CONTROL_DIR)
     except OSError:
-        error_text = '''Error, directory "%s" doesn\'t appear to exist.
+        error_text = f'''Error, directory "{CONTROL_DIR }" doesn\'t appear to exist.
 Please do the following - needs root:
-\tsudo mkdir "%s" && sudo chgrp %s "%s" && sudo chmod g+ws "%s"''' \
-% (CONTROL_DIR, CONTROL_DIR, str(my_egroup_id), CONTROL_DIR, CONTROL_DIR)
+\tsudo mkdir "{ CONTROL_DIR }" && sudo chgrp { str(my_egroup_id) } "{ CONTROL_DIR }" && sudo chmod g+ws "{ CONTROL_DIR }"'''
         config_bad = -1
         return (config_bad,
                 error_text)  # error so severe, no point in continuing
@@ -580,9 +579,9 @@ def page_channels():
                             chan_name_ref = chan_name[:-2]
                         else:
                             chan_name_ref = chan_name
-                        chan_img_url = '%s/%s.png' % (icon_url, chan_name_ref, )
+                        chan_img_url = f'{ icon_url }/{ chan_name_ref }.png'
                         print(f'<td width="100px" align="right" class="chan_icon">' \
-                              '<img src="{ chan_img_url }"', end='')
+                              f'<img src="{ chan_img_url }"', end='')
                         if icon_width not in ('', '0'):
                             print(f' width="{ icon_width }"', end='')
                         if icon_height not in ('', '0'):
@@ -811,13 +810,13 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                             chan_name_ref = chan_name[:-2]
                         else:
                             chan_name_ref = chan_name
-                        chan_img_url = '%s/%s.png' % (icon_url, chan_name_ref, )
+                        chan_img_url = f'{ icon_url }/{ chan_name_ref }.png'
                         print('<td width="100px" align="right" class="chan_icon">'
-                              '<img src="%s"' % (chan_img_url, ), end='')
+                              f'<img src="{ chan_img_url }"', end='')
                         if icon_width not in ('', '0'):
-                            print(' width="%s"' % (icon_width, ), end='')
+                            print(f' width="{ icon_width,}"', end='')
                         if icon_height not in ('', '0'):
-                            print(' height="%s"' % (icon_height, ), end='')
+                            print(f' height="{ icon_height }"', end='')
                         print(' alt="channel icon"></td>')
                     else:
                         print('<td>&nbsp;</td>')
@@ -829,7 +828,7 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                 if CAST_SUPPORT:
                     print('      <br>\n      <a title="chromecast this" href="?page=chromecast&amp;'
                           f'uri=/{ TS_URL_STR }/{ chan["uuid"] }">'
-                          f'<img src="{ MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST) }" alt="chromecast icon"></a>' 
+                          f'<img src="{ MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST) }" alt="chromecast icon"></a>'
                          )
                 print('</td>')
 
@@ -870,7 +869,8 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
 
                         duration = time_stop - time_start
 
-                        #print(f'<div>epoch_time { epoch_time }<br>time_start { time_start }<br>time stop { time_stop }<br>duration { duration }</div>')
+                        #print(f'<div>epoch_time { epoch_time }<br>time_start { time_start }'
+                        #      f'<br>time stop { time_stop }<br>duration { duration }</div>')
                         # prevent past programs from showing
                         if time_stop <= epoch_time:
                             print('<div>past program</div>')
@@ -1334,8 +1334,8 @@ def page_upgrade_check():
     githash_self = get_githash_self()
     githubhash_self = get_github_hash_self()
 
-    print('<p>github hash of this file %s<br>\n' % (githubhash_self, ))
-    print('git hash of this file %s<br>\n' % (githash_self, ))
+    print(f'<p>github hash of this file { githubhash_self }<br>\n')
+    print(f'git hash of this file { githash_self, }br>\n')
 
     print('<p>')
     if githubhash_self == githash_self:
@@ -1527,10 +1527,10 @@ def secs_to_human(t_secs):
 
     h_days = ''
     if r_days > 0:
-        h_days = '%dd, ' % r_days
+        h_days = f'{ r_days }d, '
 
     #h_time = '%s%02d:%02d:%02d' % (
-    h_time = '%s%02d:%02d' % (
+    h_time = '%s%02d:%02d' % (  # pylint:disable=consider-using-f-string
         h_days,
         r_hours,
         r_mins,
