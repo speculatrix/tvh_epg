@@ -361,17 +361,15 @@ def get_channeltag_grid():
     ts_auth = MY_SETTINGS.get(SETTINGS_SECTION, TS_AUTH)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
-    ts_query = '%s/%s' % (
-        ts_url,
-        TS_URL_CTG,
-    )
+    ts_query = f'{ ts_url }/{ TS_URL_CTG }'
+
     if ts_auth == 'plain':
         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     else:
         ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
-    print('<!-- get_channeltag_grid URL %s -->' % (ts_query, ))
+    print(f'<!-- get_channeltag_grid URL { ts_query } -->')
     if ts_response.status_code != 200:
-        print('<pre>Error code %d\n%s</pre>' % (ts_response.status_code, ts_response.content, ))
+        print(f'<pre>Error code { ts_response.status_code }\n{ ts_response.content }</pre>')
         return {}
 
     ts_json = json.loads(ts_response.text, strict=False)
@@ -407,7 +405,7 @@ def get_channel_dict():
         return {}
 
     ts_text = ts_response.text
-    #print('<pre>Extreme Debug!\n\n%s\n<pre>' % (ts_text,))
+    #print(f'<pre>Extreme Debug!\n\n{ ts_text }\n<pre>')
     ts_json = json.loads(ts_text, strict=False)
     #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
     #                                   indent=4, separators=(',', ': ')) )
@@ -477,7 +475,7 @@ def get_dvr_config_grid():
         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     else:
         ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
-    print('<!-- get_dvr_config_grid URL %s -->' % (ts_query, ))
+    print(f'<!-- get_dvr_config_grid URL { ts_query } -->')
     ts_json = json.loads(ts_response.text, strict=False)
 
     #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
@@ -748,33 +746,23 @@ def page_epg():
                 checked = ' checked'
             else:
                 checked = ''
-            print(
-                #'    <input type="checkbox" name="tag" value="%s" %s/>%s&nbsp;&nbsp;'
-                '    <div><input type="checkbox" name="tag" value="%s" %s>%s&nbsp;&nbsp;</div>'
-                % (
-                    tag['uuid'],
-                    checked,
-                    tag['name'],
-                ))
+            print(f'    <div><input type="checkbox" name="tag" value="{ tag["uuid"] }" { checked }>{ tag["name"] }&nbsp;&nbsp;</div>' )
         print('''    <input type="hidden" name="page" value="epg">
     <input type="submit" name="apply" value="apply">
   </form>
 ''')
 #</p>
 
-        print('''<p><b>Channel count: %d</b></p>
-<p>Maximum number of channels viewable %s</p>
+        print(f'''<p><b>Channel count: { cdl }</b></p>
+<p>Maximum number of channels viewable { MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS) }</p>
 <p>Note, the links are the streams, open in VLC;
 you can drag and drop the link into a VLC window.
 <br><br>
 The &mapstoup; character means you can hover the mouse and see the secondary title of the programme.
-</p>''' \
-% (cdl, MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
-  ))
+</p>''')
 
         # get the EPG data for each channel
-        print('''  <table width="1700px">
-    <tr>''')
+        print('  <table width="1700px">\n    <tr>')
         if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
             print('      <th width="100px">Logo</th>')
         print('''      <th>Channel</th>
@@ -821,7 +809,7 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                     else:
                         print('<td>&nbsp;</td>')
 
-                play_url = '?page=m3u&amp;uuid=/%s/%s' % (TS_URL_STR, chan['uuid'], )
+                play_url = f'?page=m3u&amp;uuid=/{ TS_URL_STR }/{ chan["uuid"] }'
                 print('      <td width="100px" align="right"><a title="watch live" href="%s" '
                       'download="tvheadend.m3u">%s</a>&nbsp;&nbsp;&nbsp;(%d)' \
                       % (play_url, input_form_escape(chan_name), chan['number'], ))
@@ -834,12 +822,8 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
 
 
                 # grab the EPG data for the channel
-                ts_query = '%s/%s?limit=10&channel=%s' % (
-                    ts_url,
-                    TS_URL_EPG,
-                    chan['uuid'],
-                )
-                print('      <!-- channel EPG URL %s -->' % (ts_query, ))
+                ts_query = f'{ ts_url }/{ TS_URL_EPG }?limit=10&channel={ chan["uuid"] }'
+                print(f'      <!-- channel EPG URL { ts_query } -->')
                 if ts_auth == 'plain':
                     ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
                 else:
@@ -971,8 +955,8 @@ def page_error(error_text):
 
     print('<h1>Error</h1>')
     print('<p>Something went wrong</p>')
-    print('<pre>%s</pre>' % (error_text, ))
-    print('<pre>settings sections: %s</pre>' % (MY_SETTINGS.sections(), ))
+    print(f'<pre>{ error_text }</pre>')
+    print(f'<pre>settings sections: { MY_SETTINGS.sections() }</pre>')
 
 
 ##########################################################################################
@@ -982,12 +966,12 @@ def page_m3u(p_uuid):
     global MY_SETTINGS
 
     if TS_PROF_STRM in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_STRM) != '':
-        ts_profile = '?profile=%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_STRM), )
+        ts_profile = f'?profile={ MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_STRM) }'
     else:
         ts_profile = ''
 
     if TS_PAUTH in MY_SETTINGS[SETTINGS_SECTION]:
-        ts_pauth = '&AUTH=%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_PAUTH), )
+        ts_pauth = f'&AUTH={ MY_SETTINGS.get(SETTINGS_SECTION, TS_PAUTH) }'
     else:
         ts_pauth = ''
 
@@ -997,7 +981,7 @@ def page_m3u(p_uuid):
         ts_url_parsed = urllib.parse.urlparse(ts_url)
     except urllib.error.URLError as url_excpt:
         ##print(str(url_excpt))
-        print('<p>Error parsing %s</p>' % (str(url_excpt), ))
+        print(f'<p>Error parsing { str(url_excpt) }</p>')
         return
 
     if TS_URL_DVF in p_uuid:
@@ -1199,7 +1183,7 @@ def page_settings():
 
     # the check load config function doesn't populate an empty file
     if SETTINGS_SECTION not in MY_SETTINGS.sections():
-        print('section %s doesn\'t exit' % SETTINGS_SECTION)
+        print(f'section { SETTINGS_SECTION } doesn\'t exit')
         MY_SETTINGS.add_section(SETTINGS_SECTION)
 
     # attempt to find the value of each setting, either from the params
@@ -1217,7 +1201,7 @@ def page_settings():
                 setting_value = str(MY_SETTINGS.get(SETTINGS_SECTION, setting))
             except configparser.NoOptionError:
                 #except configparser.NoOptionError as noex:
-                #print('<p>Exception "%s"<br>' % (noex, ))
+                #print(f'<p>Exception "{ noex }"<br>')
                 #print('failed getting value for setting "%s" from config, '
                 #      'using default</p>' % (SETTINGS_DEFAULTS[setting][TITLE], ))
                 if DFLT in SETTINGS_DEFAULTS[setting]:
