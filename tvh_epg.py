@@ -586,8 +586,8 @@ def page_channels():
                         if skip_icon:
                             print('&nbsp;')
                         else:
-                            chan_img_url = f'{ icon_url }/{ chan_name_ref }.png'
-                            print(f'<img src="{ chan_img_url }"', end='')
+                            chan_img_url = f'{ icon_url }/{ input_form_escape(chan_name_ref) }.png'
+                            print(f'<img alt="channel icon" src="{ chan_img_url }"', end='')
                             if icon_width not in ('', '0'):
                                 print(f' width="{ icon_width }"', end='')
                             if icon_height not in ('', '0'):
@@ -820,7 +820,7 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                         if skip_icon:
                             print('&nbsp;')
                         else:
-                            chan_img_url = f'{ icon_url }/{ chan_name_ref }.png'
+                            chan_img_url = f'{ icon_url }/{ input_form_escape(chan_name_ref) }.png'
                             print(f'<img src="{ chan_img_url }"', end='')
                             if icon_width not in ('', '0'):
                                 print(f' width="{ icon_width }"', end='')
@@ -1381,8 +1381,9 @@ def html_page_header():
     print('''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" >
+    <title>tvh_epg.py</title>
     <meta http-equiv="refresh" content="600;">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <style type="text/css">
 
     body {
