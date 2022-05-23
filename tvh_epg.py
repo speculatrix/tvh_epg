@@ -133,24 +133,24 @@ BG_COL_DEF_INPUT = 'f8f8f8'
 # default values of the settings when being created
 SETTINGS_DEFAULTS = {
     TS_URL: {
-        TITLE: 'URL of TV Headend Server',
-        DFLT: 'http://tvh.example.com:9981',
-        TYPE: 'text',
+        TITLE:  'URL of TV Headend Server',
+        DFLT:   'http://tvh.example.com:9981',
+        TYPE:   'text',
     },
     TS_URL_ICONS: {
-        TITLE: 'URL to picons',
-        DFLT: 'http://tvh.example.com/TVLogos/',
-        TYPE: 'text',
+        TITLE:  'URL to picons',
+        DFLT:   'http://tvh.example.com/TVLogos/',
+        TYPE:   'text',
     },
     LOCAL_ICON_DIR: {
-        TITLE: 'Local icon directory, if set, checks icon file exists<br>(to avoid broken images)',
-        DFLT: '/home/hts/TVLogos/',
-        TYPE: 'text',
+        TITLE:  'Local icon directory, if set, checks icon file exists<br>(to avoid broken images)',
+        DFLT:   '/home/hts/TVLogos/',
+        TYPE:   'text',
     },
     TS_URL_CAST: {
-        TITLE: 'URL to chromecast icon',
-        DFLT: 'http://tvh.example.com/ic_cast_connected_white_24dp.png',
-        TYPE: 'text',
+        TITLE:  'URL to chromecast icon',
+        DFLT:   'http://tvh.example.com/ic_cast_connected_white_24dp.png',
+        TYPE:   'text',
     },
     TS_USER: {
         TITLE:  'Username on TVH server',
@@ -168,49 +168,49 @@ SETTINGS_DEFAULTS = {
         TYPE:   'text'
     },
     TS_PAUTH: {
-        TITLE: 'Persistent Auth Token',
-        DFLT: TS_PAUTH,
-        TYPE: 'password',
+        TITLE:  'Persistent Auth Token',
+        DFLT:   TS_PAUTH,
+        TYPE:   'password',
     },
     TS_PROF_STRM: {
-        TITLE: 'profile for streaming',
-        DFLT: 'default',
-        TYPE: 'text',
+        TITLE:  'profile for streaming',
+        DFLT:   'default',
+        TYPE:   'text',
     },
     TS_PROF_CAST: {
-        TITLE: 'profile for chromecasting',
-        DFLT: 'chromecast',
-        TYPE: 'text',
+        TITLE:  'profile for chromecasting',
+        DFLT:   'chromecast',
+        TYPE:   'text',
     },
     SH_LOGO: {
-        TITLE: 'Show Channel Logos',
-        DFLT: '0',
-        TYPE: 'number',
+        TITLE:  'Show Channel Logos',
+        DFLT:   '0',
+        TYPE:   'text',
     },
     MAX_CHANS: {
-        TITLE: 'Maximum Number Of Channels',
-        DFLT: '500',
-        TYPE: 'number',
+        TITLE:  'Maximum Number Of Channels',
+        DFLT:   '500',
+        TYPE:   'text',
     },
     ICON_HEIGHT: {
-        TITLE: 'Force icon height to this, 0 for off',
-        DFLT: '64',
-        TYPE: 'text',
+        TITLE:  'Force icon height to this, 0 for off',
+        DFLT:   '64',
+        TYPE:   'text',
     },
     ICON_WIDTH: {
-        TITLE: 'Force icon width to this, 0 for off',
-        DFLT: '80',
-        TYPE: 'text',
+        TITLE:  'Force icon width to this, 0 for off',
+        DFLT:   '80',
+        TYPE:   'text',
     },
     BG_COL_PAGE: {
-        TITLE: 'page background colour',
-        DFLT: BG_COL_DEF_PAGE,
-        TYPE: 'text',
+        TITLE:  'page background colour',
+        DFLT:   BG_COL_DEF_PAGE,
+        TYPE:   'text',
     },
     BG_COL_INPUT: {
-        TITLE: 'input field background colour',
-        DFLT: BG_COL_DEF_INPUT,
-        TYPE: 'text',
+        TITLE:  'input field background colour',
+        DFLT:   BG_COL_DEF_INPUT,
+        TYPE:   'text',
     },
 }
 
@@ -533,9 +533,9 @@ def page_channels():
                 checked = ' checked'
             else:
                 checked = ''
-            print(f'<input type="checkbox" name="tag" value="{ tag["uuid"] }" { checked }/>{ tag["name"] }&nbsp;&nbsp;')
-        print('''    <input type="hidden" name="page" value="channels" />
-    <input type="submit" name="apply" value="apply" />
+            print(f'<input type="checkbox" name="tag" value="{ tag["uuid"] }" { checked }>{ tag["name"] }&nbsp;&nbsp;')
+        print('''    <input type="hidden" name="page" value="channels">
+    <input type="submit" name="apply" value="apply">
   </form>''')
 
 
@@ -679,8 +679,8 @@ def page_chromecast(p_uri, p_cast_device):
     # user must choose a device to cast to
     if p_cast_device == '':
         print('<form method="get" action="">\n'
-              '<input type="hidden" name="page" value="chromecast" />\n'
-              '<input type="hidden" name="uri" value="%s" />' % (p_uri, ))
+              '<input type="hidden" name="page" value="chromecast">\n'
+              '<input type="hidden" name="uri" value="%s">' % (p_uri, ))
         print('Select device')
         print('<select name="cast_device">')
 
@@ -1042,7 +1042,7 @@ def page_record(p_event_id, p_profile):
             # if multiple profiles, ask the user
             if len(dcg_json['entries']) > 1:
                 print('<form method="get">')
-                print('<input type="hidden" name="page" value="record" />')
+                print('<input type="hidden" name="page" value="record">')
                 print('<select name="profile">')
                 for entry in dcg_json['entries']:
                     print('<option value=%s>profile: %s</p>' % (
@@ -1050,11 +1050,11 @@ def page_record(p_event_id, p_profile):
                         entry['profile'],
                     ))
                 print('</select>')
-                print('<input type="hidden" name="event_id" value="%s" />' %
+                print('<input type="hidden" name="event_id" value="%s">' %
                       (p_event_id, ))
-                print('<input type="submit" name="Go" value="Go" />')
+                print('<input type="submit" name="Go" value="Go">')
                 print(
-                    '<input type="submit" name="Cancel" value="Cancel" onclick="self.close()" />'
+                    '<input type="submit" name="Cancel" value="Cancel" onclick="self.close()">'
                 )
                 print('</form method="get">')
             # if only one profile, just select it
@@ -1087,9 +1087,9 @@ def page_record(p_event_id, p_profile):
             print('<p><b>Success</b></p>')
         else:
             print('<p><b>Failed</b></p>')
-        print('<input type="hidden" name="page" value="record" />')
+        print('<input type="hidden" name="page" value="record">')
         print(
-            '<input type="submit" name="Close" value="Close" onclick="self.close()" />'
+            '<input type="submit" name="Close" value="Close" onclick="self.close()">'
         )
         print('</form method="get">')
 
@@ -1137,7 +1137,7 @@ def page_recordings():
                 print('<td><a href="?page=m3u&amp;uuid=%s" download="tvheadend.m3u">%s</a>'
                       % (entry['url'], input_form_escape(entry['title']['eng']), ))
                 if CAST_SUPPORT:
-                    print('<br><a href="?page=chromecast&amp;uri=%s"><img src="%s"></a>' % \
+                    print('<br><a href="?page=chromecast&amp;uri=%s"><img src="%s" alt="chromecast icon"></a>' % \
                           (entry['url'],
                            MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
                           ))
@@ -1230,7 +1230,7 @@ def page_settings():
 
 
     print('<form method="get" action="">'                           \
-          '<input type="hidden" name="page" value="settings" />'    \
+          '<input type="hidden" name="page" value="settings">'    \
           '<table>'                                                 \
           '  <tr>'                                                  \
           #'    <th align="right">Key</th>'                          \
@@ -1249,14 +1249,14 @@ def page_settings():
             setting_value = SETTINGS_DEFAULTS[setting][DFLT]
 
         print('      <td width="50%%"><input type="%s" name="c_%s" '
-              'value="%s" style="display:table-cell; width:100%%" /></td>' \
+              'value="%s" style="display:table-cell; width:100%%"></td>' \
               % (SETTINGS_DEFAULTS[setting][TYPE], setting, setting_value, ))
         print('      <td>&nbsp;%s</td>' % (SETTINGS_DEFAULTS[setting][DFLT], ))
         print('    </tr>')
 
     print('''    <tr>
       <td align="center" colspan="1">&nbsp;</td>
-      <td align="center" colspan="1"><input type="submit" name="submit" value="submit" /></td>
+      <td align="center" colspan="1"><input type="submit" name="submit" value="submit"></td>
       <td align="center" colspan="1"><input type="reset" value="revert"></td>
     </tr>
   </table>
@@ -1380,8 +1380,8 @@ def html_page_header():
     #print('''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" http://www.w3.org/TR/html4/strict.dtd">
     print('''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" >
   <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" >
     <meta http-equiv="refresh" content="600;">
     <style type="text/css">
 
