@@ -85,6 +85,7 @@ MAX_FUTURE = 14400   # 4 hours - how far into the future to show a prog
 #MAX_PAST = 900      # 15 mins - how much of past programs to show
 MAX_PAST = 720      # 12 mins - how much of past programs to show
 #MAX_PAST = 400      # 15 mins - how much of past programs to show
+CHAN_TABLE_COLUMNS = 4
 
 INPUT_FORM_ESCAPE_TABLE = {
     '"': "&quot;",
@@ -105,6 +106,7 @@ CONTROL_DIR = '/var/lib/tvh_epg'
 SETTINGS_FILE = 'tvh_epg_settings.ini'
 SETTINGS_SECTION = 'user'
 
+CHAN_COLUMNS = 'channel_column_count'
 MAX_CHANS = 'max_chans'
 SH_LOGO = 'sh_ch_logo'
 TS_AUTH = 'auth_plain_digest'
@@ -190,6 +192,11 @@ SETTINGS_DEFAULTS = {
     MAX_CHANS: {
         TITLE:  'Maximum Number Of Channels',
         DFLT:   '500',
+        TYPE:   'text',
+    },
+    CHAN_COLUMNS: {
+        TITLE:  'Columns In Channel Table',
+        DFLT:   '4',
         TYPE:   'text',
     },
     ICON_HEIGHT: {
@@ -501,8 +508,8 @@ def input_form_escape(text):
 
 
 ##########################################################################################
-def page_channels():
-    '''prints the channel list to stdout'''
+def page_channel_table():
+    '''prints the channel table to stdout'''
 
     global MY_SETTINGS
 
@@ -542,20 +549,24 @@ def page_channels():
         #####################################################################
         # channel table
 
+        # index required to make table rows
         print('''  <table>
     <tr>''')
-        if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
-            print('      <th>Channel Logo</th>')
-        print('''       <th>Channel Name</th>
-      <th>Channel Number</th>
-    </tr>
-''')
+        for column_num in range(0, int(MY_SETTINGS.get(SETTINGS_SECTION, CHAN_COLUMNS))):
+            if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
+                print('        <th>Channel Logo</th>')
+            print('''        <th>Channel Name</th>
+        <td>&nbsp;</td>''')
+        print('      </tr>')
         #ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
         icon_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_ICONS)
         icon_width = MY_SETTINGS.get(SETTINGS_SECTION, ICON_WIDTH)
         icon_height = MY_SETTINGS.get(SETTINGS_SECTION, ICON_HEIGHT)
+        chan_idx = 0
         for chan_name in channel_dict:
             chan = channel_dict[chan_name]
+
+            # check channel isn't filtered out by tags
             show_channel = 0
             if 'tags' not in chan or len(p_tag) == 0:
                 show_channel = 1
@@ -565,7 +576,8 @@ def page_channels():
                         show_channel = 1
 
             if show_channel:
-                print('    <tr>')
+                if chan_idx % (int(MY_SETTINGS.get(SETTINGS_SECTION, CHAN_COLUMNS))) == 0:
+                    print('      <tr>')
                 if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
                     if 'icon_public_url' in channel_dict[chan_name]:
                         # chop +1 channel names for icons
@@ -582,9 +594,9 @@ def page_channels():
                             if not os.path.exists(icon_file_name):
                                 skip_icon = True
 
-                        print('<td width="100px" align="right" class="chan_icon">')
+                        print('        <td width="100px" align="right" class="chan_icon">', end='')
                         if skip_icon:
-                            print('&nbsp;')
+                            print('&nbsp;', end='')
                         else:
                             chan_img_url = f'{ icon_url }/{ input_form_escape(chan_name_ref) }.png'
                             print(f'<img alt="channel icon" src="{ chan_img_url }"', end='')
@@ -592,23 +604,34 @@ def page_channels():
                                 print(f' width="{ icon_width }"', end='')
                             if icon_height not in ('', '0'):
                                 print(f' height="{ icon_height }"', end='')
-                            print('>')
+                            print('>', end='')
                         print('</td>')
                     else:
-                        print('<td>&nbsp;</td>')
+                        print('        <td>&nbsp;</td>')
 
-                play_url = '?page=m3u&amp;uuid=/%s/%s' % (TS_URL_STR, chan['uuid'], )
-                print('<td><a href="%s" download="tvheadend.m3u">%s</a>' % (play_url, input_form_escape(chan_name), ))
+                play_url = '?page=m3u&amp;uuid=/{ TS_URL_STR }/{chan["uuid"] }'
+                print(f'        <td width="100px" align="right"><a title="watch live" href="{ play_url }" '
+                      f'download="tvheadend.m3u">{ input_form_escape(chan_name) }</a>&nbsp;&nbsp;&nbsp;({ chan["number"] })' )
                 if CAST_SUPPORT:
                     print('<br><a href="?page=chromecast&amp;uri=/%s/%s"><img src="%s" alt="chromecast URL"></a>' % \
                           (TS_URL_STR,
                            chan['uuid'],
                            MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
-                          ))
+                          ), end='')
 
-                print(f'</td>\n      <td>{ chan["number"] }</td>\n        </tr>')
+                print(f'</td>\n')
 
-        print('</table>')
+                chan_idx += 1
+                # if we're about to start a new row, close the row
+                if chan_idx % (int(MY_SETTINGS.get(SETTINGS_SECTION, CHAN_COLUMNS))) == 0:
+                    print('      </tr>')
+                else:
+                    print('        <td>&nbsp;</td>')
+
+        # don't leave a row hanging
+        if chan_idx % (int(MY_SETTINGS.get(SETTINGS_SECTION, CHAN_COLUMNS))) != 0:
+            print('      </tr>')
+        print('    </table>')
 
 
 ##########################################################################################
@@ -730,8 +753,8 @@ def page_chromecast(p_uri, p_cast_device):
     pychromecast.discovery.stop_discovery(browser)
 
 ##########################################################################################
-def page_epg():
-    '''prints the EPG to stdout'''
+def page_list_chans_epg(show_epg):
+    '''prints the cnannel list with/out EPG to stdout'''
 
     global MY_SETTINGS
 
@@ -770,14 +793,18 @@ you can drag and drop the link into a VLC window.
 The &mapstoup; character means you can hover the mouse and see the secondary title of the programme.
 </p>''')
 
-        # get the EPG data for each channel
-        print('  <table width="1700px">\n    <tr>')
+
+        # print the table/page header
+        if show_epg:
+            print('  <table width="1700px">\n    <tr>')
+        else:
+            print('  <table>\n    <tr>')
         if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
             print('      <th width="100px">Logo</th>')
-        print('''      <th>Channel</th>
-      <th>&nbsp;</th>
-    </tr>
-''')
+        print('      <th>Channel</th>')
+        if show_epg:
+            print('      <th>&nbsp;</th>')
+        print('    </tr>')
 
         ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
         icon_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_ICONS)
@@ -842,124 +869,125 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                 print('</td>')
 
 
-                # grab the EPG data for the channel
-                ts_query = f'{ ts_url }/{ TS_URL_EPG }?limit=10&channel={ chan["uuid"] }'
-                print(f'      <!-- channel EPG URL { ts_query } -->')
-                if ts_auth == 'plain':
-                    ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
-                else:
-                    ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
-                print('      <!-- requests.response code %d -->' % (ts_response.status_code, ))
-                ts_text = ts_response.text
-                #print('<td><pre>Extreme Debug!\n\n%s\n<pre></td>' % (ts_text,))
-                ts_json = json.loads(ts_text, strict=False)
+                if show_epg:
+                    # grab the EPG data for the channel
+                    ts_query = f'{ ts_url }/{ TS_URL_EPG }?limit=10&channel={ chan["uuid"] }'
+                    print(f'      <!-- channel EPG URL { ts_query } -->')
+                    if ts_auth == 'plain':
+                        ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
+                    else:
+                        ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
+                    print('      <!-- requests.response code %d -->' % (ts_response.status_code, ))
+                    ts_text = ts_response.text
+                    #print('<td><pre>Extreme Debug!\n\n%s\n<pre></td>' % (ts_text,))
+                    ts_json = json.loads(ts_text, strict=False)
 
-                if len(ts_json['entries']):
-                    #chan[EPG] = ts_json['entries']
-                    print(
-                        '      <td valign="top" nowrap width="1600px">\n      <div class="epg_row">'
-                    )
+                    if len(ts_json['entries']):
+                        #chan[EPG] = ts_json['entries']
+                        print(
+                            '      <td valign="top" nowrap width="1600px">\n      <div class="epg_row">'
+                        )
 
-                    #current_left_time = MAX_PAST / SECS_P_PIXEL # starts at zero secs
-                    current_left_time = 0
-                    entry_num = 0
-                    for entry in ts_json['entries']:
-                        entry_num += 1
-                        time_start = int(entry['start'])
-                        time_stop = int(entry['stop'])
+                        #current_left_time = MAX_PAST / SECS_P_PIXEL # starts at zero secs
+                        current_left_time = 0
+                        entry_num = 0
+                        for entry in ts_json['entries']:
+                            entry_num += 1
+                            time_start = int(entry['start'])
+                            time_stop = int(entry['stop'])
 
-                        if entry_num == 9999:
-                            time_start += 600   # fake a gap
-                            time_stop -= 600   # fake a gap
+                            if entry_num == 9999:
+                                time_start += 600   # fake a gap
+                                time_stop -= 600   # fake a gap
 
-                        duration = time_stop - time_start
-
-                        #print(f'<div>epoch_time { epoch_time }<br>time_start { time_start }'
-                        #      f'<br>time stop { time_stop }<br>duration { duration }</div>')
-                        # prevent past programs from showing
-                        if time_stop <= epoch_time:
-                            print('<div>past program</div>')
-                            continue
-
-                        # prevent far future programs making page too wide by ending the row
-                        if time_start - epoch_time >= MAX_FUTURE:
-                            continue
-
-                        # prevent overly long program making page too wide by narrowing
-                        #if time_stop - epoch_time >= MAX_FUTURE:
-                        #    time_stop = epoch_time + MAX_FUTURE
-                        #    duration = time_stop - time_start
-
-                        title = entry['title'] if 'title' in entry else '</i>Untitled</i>'
-                        subtitle = entry['subtitle'] if 'subtitle' in entry else ''
-
-                        time_until = time_start - epoch_time
-                        time_used = epoch_time - time_start
-                        time_left = time_stop - epoch_time
-
-                        #print(f'<div>duration { duration },<br>time used { time_used },<br>time_left { time_left }</div>')
-                        if time_until > current_left_time:
-                            # gap until next program
-                            box_width = (time_until - current_left_time) / SECS_P_PIXEL
-                            current_left_time = time_until
-                            print('        <div class="epg_none" style="width: '
-                                  '%dpx; max-width: %dpx">GAP</div>' % (
-                                      box_width,
-                                      box_width,
-                                  ), )
-
-                        # print the boxes containing each program
-                        if time_used > 0: # playing item
-                            time_used = MAX_PAST # used time is a fixed width
-                            time_start = epoch_time - MAX_PAST
                             duration = time_stop - time_start
-                            # make box narrower, not interested in distant past
-                            #if time_used > MAX_PAST:
-                                #time_used = MAX_PAST # used time is a fixed width
-                                #duration = time_stop - time_start
-                                #print(f'<div>duration { duration },<br>time used { time_used },<br>time_left { time_left }</div>')
-                                #time_used = 10
-                            box_width = duration / SECS_P_PIXEL
-                            current_left_time += duration
-                            # box for things already started
-                            print('        <div class="epg_now" style="width: '
-                                  f'{ box_width }px; max-width: { box_width }px">'
-                                  , end='')
 
-                        else: # future item
-                            time_left = duration
-                            box_width = duration / SECS_P_PIXEL
-                            current_left_time += duration
-                            print('        <div class="epg_next" style="width: '
-                                  f'{ box_width }px; max-width: { box_width }px">'
-                                  , end='')
-                        # print the programme details
-                        #record_this = (f'<a title="record this" href="?page=record&amp;event_id={ entry["eventId"] }"'
-                        #               ' target="tvh_epg_record" width="320" height="320">'
-                        #               '&reg;</a>&nbsp;')
-                        record_this = (f'<div class="record_this"><a title="record this" href="?page=record&amp;event_id={ entry["eventId"] }"'
-                                       ' target="tvh_epg_record">&reg;</a>&nbsp;</div>')
+                            #print(f'<div>epoch_time { epoch_time }<br>time_start { time_start }'
+                            #      f'<br>time stop { time_stop }<br>duration { duration }</div>')
+                            # prevent past programs from showing
+                            if time_stop <= epoch_time:
+                                print('<div>past program</div>')
+                                continue
 
-                        if subtitle != '':
-                            print(f'{ record_this }<div class="tooltip">'
-                                  f'<b>&mapstoup;{ input_form_escape(title) }</b><span class="tooltiptext">'
-                                  f'<u><b>{ input_form_escape(title) }</b></u><br>{ input_form_escape(subtitle) }</span></div>'
-                                  , end='')
-                        else:
-                            print(f'{ record_this }<b>{ input_form_escape(title) }</b>', end='')
+                            # prevent far future programs making page too wide by ending the row
+                            if time_start - epoch_time >= MAX_FUTURE:
+                                continue
 
-                        if time_used > 0:
-                            print(f'<br>end { epoch_to_human_duration(time_stop) }'
-                                  f'<br>left { secs_to_human(time_left) }')
-                        else:
-                            print(f'<br>&nbsp;&nbsp;&nbsp;start { epoch_to_human_duration(time_start) }'
-                                  f'<br>length { secs_to_human(duration) }')
-                        #print(f'<br>current_left_time will be { int(current_left_time) }<br>entry_num {entry_num}')
-                        print('        </div>')
-                    print('      <div style="clear:both; font-size:1px;"></div>\n      </div>\n      </td>')
-                else:
-                    print('      <td>&nbsp</td>')
-                print('    </tr>')
+                            # prevent overly long program making page too wide by narrowing
+                            #if time_stop - epoch_time >= MAX_FUTURE:
+                            #    time_stop = epoch_time + MAX_FUTURE
+                            #    duration = time_stop - time_start
+
+                            title = entry['title'] if 'title' in entry else '</i>Untitled</i>'
+                            subtitle = entry['subtitle'] if 'subtitle' in entry else ''
+
+                            time_until = time_start - epoch_time
+                            time_used = epoch_time - time_start
+                            time_left = time_stop - epoch_time
+
+                            #print(f'<div>duration { duration },<br>time used { time_used },<br>time_left { time_left }</div>')
+                            if time_until > current_left_time:
+                                # gap until next program
+                                box_width = (time_until - current_left_time) / SECS_P_PIXEL
+                                current_left_time = time_until
+                                print('        <div class="epg_none" style="width: '
+                                      '%dpx; max-width: %dpx">GAP</div>' % (
+                                          box_width,
+                                          box_width,
+                                      ), )
+
+                            # print the boxes containing each program
+                            if time_used > 0: # playing item
+                                time_used = MAX_PAST # used time is a fixed width
+                                time_start = epoch_time - MAX_PAST
+                                duration = time_stop - time_start
+                                # make box narrower, not interested in distant past
+                                #if time_used > MAX_PAST:
+                                    #time_used = MAX_PAST # used time is a fixed width
+                                    #duration = time_stop - time_start
+                                    #print(f'<div>duration { duration },<br>time used { time_used },<br>time_left { time_left }</div>')
+                                    #time_used = 10
+                                box_width = duration / SECS_P_PIXEL
+                                current_left_time += duration
+                                # box for things already started
+                                print('        <div class="epg_now" style="width: '
+                                      f'{ box_width }px; max-width: { box_width }px">'
+                                      , end='')
+
+                            else: # future item
+                                time_left = duration
+                                box_width = duration / SECS_P_PIXEL
+                                current_left_time += duration
+                                print('        <div class="epg_next" style="width: '
+                                      f'{ box_width }px; max-width: { box_width }px">'
+                                      , end='')
+                            # print the programme details
+                            #record_this = (f'<a title="record this" href="?page=record&amp;event_id={ entry["eventId"] }"'
+                            #               ' target="tvh_epg_record" width="320" height="320">'
+                            #               '&reg;</a>&nbsp;')
+                            record_this = (f'<div class="record_this"><a title="record this" href="?page=record&amp;event_id={ entry["eventId"] }"'
+                                           ' target="tvh_epg_record">&reg;</a>&nbsp;</div>')
+
+                            if subtitle != '':
+                                print(f'{ record_this }<div class="tooltip">'
+                                      f'<b>&mapstoup;{ input_form_escape(title) }</b><span class="tooltiptext">'
+                                      f'<u><b>{ input_form_escape(title) }</b></u><br>{ input_form_escape(subtitle) }</span></div>'
+                                      , end='')
+                            else:
+                                print(f'{ record_this }<b>{ input_form_escape(title) }</b>', end='')
+
+                            if time_used > 0:
+                                print(f'<br>end { epoch_to_human_duration(time_stop) }'
+                                      f'<br>left { secs_to_human(time_left) }')
+                            else:
+                                print(f'<br>&nbsp;&nbsp;&nbsp;start { epoch_to_human_duration(time_start) }'
+                                      f'<br>length { secs_to_human(duration) }')
+                            #print(f'<br>current_left_time will be { int(current_left_time) }<br>entry_num {entry_num}')
+                            print('        </div>')
+                        print('      <div style="clear:both; font-size:1px;"></div>\n      </div>\n      </td>')
+                    else:
+                        print('      <td>&nbsp</td>')
+                    print('    </tr>')
 
         print('</table>')
 
@@ -1500,7 +1528,8 @@ def html_page_header():
 
     print('''<p>
 <b>Menu:</b>&nbsp;<a href="?page=epg">EPG</a>&nbsp;&nbsp;&nbsp;
-<a href="?page=channels">Channels</a>&nbsp;&nbsp;&nbsp;
+<a href="?page=channel_list">Channel List</a>&nbsp;&nbsp;&nbsp;
+<a href="?page=channel_table">Channel Table</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=recordings">Recordings</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=serverinfo">Server Info</a>&nbsp;&nbsp;&nbsp;
 <a href="?page=settings">Settings</a>&nbsp;&nbsp;&nbsp;
@@ -1591,16 +1620,20 @@ def web_interface():
 
     if p_page == EPG:
         html_page_header()
-        page_epg()
+        page_list_chans_epg(True)
         html_page_footer()
 
     elif p_page == 'error':
         html_page_header()
         page_error(error_text)
         html_page_footer()
-    elif p_page == 'channels':
+    elif p_page == 'channel_list':
         html_page_header()
-        page_channels()
+        page_list_chans_epg(False)
+        html_page_footer()
+    elif p_page == 'channel_table':
+        html_page_header()
+        page_channel_table()
         html_page_footer()
     elif CAST_SUPPORT and p_page == 'chromecast':
         html_page_header()
