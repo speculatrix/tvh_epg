@@ -89,7 +89,7 @@ CHAN_TABLE_COLUMNS = 4
 
 INPUT_FORM_ESCAPE_TABLE = {
     '"': "&quot;",
-    "'": "&rsquo;",
+#    "'": "&rsquo;",    # thanks DavidG
     "&": "&amp;",
 }
 
