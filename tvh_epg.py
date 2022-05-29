@@ -613,12 +613,11 @@ def page_channel_table():
                 print(f'        <td width="100px" align="right"><a title="watch live" href="{ play_url }" '
                       f'download="tvheadend.m3u">{ input_form_escape(chan_name) }</a>&nbsp;&nbsp;&nbsp;({ chan["number"] })' )
                 if CAST_SUPPORT:
-                    print('<br><a href="?page=chromecast&amp;uri=/%s/%s"><img src="%s" alt="chromecast URL"></a>' % \
-                          (TS_URL_STR,
-                           chan['uuid'],
-                           MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST),
-                          ), end='')
-
+                    print('        <br>\n        <a title="chromecast this" href="?page=chromecast&amp;'
+                          f'uri=/{ TS_URL_STR }/{ chan["uuid"] }">'
+                          f'<img src="{ MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST) }" alt="chromecast icon"></a>'
+                          , end=''
+                         )
                 print(f'</td>\n')
 
                 chan_idx += 1
