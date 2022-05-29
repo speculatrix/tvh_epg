@@ -5,7 +5,6 @@
 * add font and scale settings so you can tune the UI to your screen size
 * improve the what's on now so it doesn't get squashed too thin
 * save a cache of channel information
-* allow a different URL for 
 * make display more attractive
 
 * add a filter feature, to exclude or only include channels
@@ -24,6 +23,16 @@
 * 
 
 ## Done - in reverse order
+
+202205
+* big fixes
+* W3C fixed
+* pylint fixes
+* added channel table
+* added a local path to picons, if set can avoid making bad img src
+* improved the hover tooltips for live, chromecast, record and title
+* fixed the EPG/channel layout
+* improved the EPG layout
 
 20210209
 * can choose streaming profiles
