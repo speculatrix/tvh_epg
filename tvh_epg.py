@@ -1206,8 +1206,8 @@ def page_serverinfo():
     ts_auth = MY_SETTINGS.get(SETTINGS_SECTION, TS_AUTH)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
-    ts_query = f'{ ts_url }/{ TS_URL_SVI, }'
-    print('<!-- serverinfo URL %s -->' % (ts_query, ))
+    ts_query = f'{ ts_url }/{ TS_URL_SVI }'
+    print(f'<!-- serverinfo URL { ts_query } -->')
     if ts_auth == 'plain':
         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     else:
