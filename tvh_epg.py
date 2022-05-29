@@ -1176,7 +1176,7 @@ def page_recordings():
                 print(TD_EMPTY_CELL)
 
             if 'start' in entry:
-                print('<td>{ epoch_to_human_date(entry["start"]) }</td>')
+                print(f'<td>{ epoch_to_human_date(entry["start"]) }</td>')
             else:
                 print(TD_EMPTY_CELL)
 
@@ -1297,8 +1297,7 @@ go direct to Google's DNS servers and thus private DNS is ignored.
     if config_file_handle:
         MY_SETTINGS.write(config_file_handle)
     else:
-        print('<b>Error</b>, failed to open and write config file "%s"' %
-              (CONFIG_FILE_NAME, ))
+        print(f'<b>Error</b>, failed to open and write config file "{ CONFIG_FILE_NAME }"')
 
 
 ##########################################################################################
