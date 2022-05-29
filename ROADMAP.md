@@ -2,6 +2,9 @@
 
 ## TBD
 
+* catch up with newer chromecast
+* show status of what's being recorded
+* add "now showing" to the channel table?
 * add font and scale settings so you can tune the UI to your screen size
 * improve the what's on now so it doesn't get squashed too thin
 * save a cache of channel information
@@ -19,7 +22,6 @@
 
 
 ## Bugs
-* tooltip exists even if empty
 * 
 
 ## Done - in reverse order
