@@ -408,9 +408,9 @@ def get_channel_dict():
         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     else:
         ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
-    print('<!-- get_channel_dict URL %s -->' % (ts_query, ))
+    print(f'<!-- get_channel_dict URL { ts_query } -->')
     if ts_response.status_code != 200:
-        print('<pre>Error code %d\n%s</pre>' % (ts_response.status_code, ts_response.content, ))
+        print(f'<pre>Error code { ts_response.status_code }\n{ ts_response.content }</pre>')
         return {}
 
     ts_text = ts_response.text
@@ -552,7 +552,7 @@ def page_channel_table():
         # index required to make table rows
         print('''  <table>
     <tr>''')
-        for column_num in range(0, int(MY_SETTINGS.get(SETTINGS_SECTION, CHAN_COLUMNS))):
+        for _column_num in range(0, int(MY_SETTINGS.get(SETTINGS_SECTION, CHAN_COLUMNS))):
             if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
                 print('        <th>Channel Logo</th>')
             print('''        <th>Channel Name</th>
@@ -618,7 +618,7 @@ def page_channel_table():
                           f'<img src="{ MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST) }" alt="chromecast icon"></a>'
                           , end=''
                          )
-                print(f'</td>\n')
+                print('</td>\n')
 
                 chan_idx += 1
                 # if we're about to start a new row, close the row
@@ -649,7 +649,7 @@ def page_chromecast(p_uri, p_cast_device):
         chromecasts, browser = chromecasts
 
     if TS_PROF_CAST in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_CAST) != '':
-        ts_profile = '?profile=%s' % (MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_CAST), )
+        ts_profile = f'?profile={ MY_SETTINGS.get(SETTINGS_SECTION, TS_PROF_CAST) }'
     else:
         ts_profile = ''
 
@@ -659,10 +659,10 @@ def page_chromecast(p_uri, p_cast_device):
         ts_url_parsed = urllib.parse.urlparse(ts_url)
     except urllib.error.URLError as url_excpt:
         ##print(str(url_excpt))
-        print('<p>Error parsing %s</p>' % (str(url_excpt), ))
+        print(f'<p>Error parsing { str(url_excpt) }</p>')
         return
 
-    print('<p>hostname %s, netloc %s</p>' % (ts_url_parsed.hostname, ts_url_parsed.netloc, ))
+    print(f'<p>hostname { ts_url_parsed.hostname }, netloc { ts_url_parsed.netloc }</p>')
 
 
     #print('<br><br>Debug: uri "%s"<br>' % (p_uri, ))
@@ -876,7 +876,7 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
                     else:
                         ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
-                    print('      <!-- requests.response code %d -->' % (ts_response.status_code, ))
+                    print(f'      <!-- requests.response code { ts_response.status_code, } -->')
                     ts_text = ts_response.text
                     #print('<td><pre>Extreme Debug!\n\n%s\n<pre></td>' % (ts_text,))
                     ts_json = json.loads(ts_text, strict=False)
