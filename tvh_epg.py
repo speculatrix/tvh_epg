@@ -611,7 +611,7 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                     else:
                         print('        <td>&nbsp;</td>')
 
-                play_url = '?page=m3u&amp;uuid=/{ TS_URL_STR }/{chan["uuid"] }'
+                play_url = f'?page=m3u&amp;uuid=/{ TS_URL_STR }/{chan["uuid"] }'
                 print(f'        <td width="100px" align="right"><a title="watch live" href="{ play_url }" '
                       f'download="tvheadend.m3u">{ input_form_escape(chan_name) }</a>&nbsp;&nbsp;&nbsp;({ chan["number"] })' )
                 if CAST_SUPPORT:
@@ -1107,7 +1107,7 @@ def page_record(p_event_id, p_profile):
             ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
         else:
             ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
-        print('<!-- page_record CBE URL %s -->' % (ts_url, ))
+        print(f'<!-- page_record CBE URL { ts_url } -->')
         ts_json = json.loads(ts_response.text, strict=False)
 
         #print('<pre>%s</pre>' % json.dumps(ts_json, sort_keys=True, \
@@ -1144,7 +1144,7 @@ def page_recordings():
         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     else:
         ts_response = requests.get(ts_query, auth=HTTPDigestAuth(ts_user, ts_pass))
-    print('<!-- status inputs URL %s -->' % (ts_query, ))
+    print(f'<!-- status inputs URL { ts_query } -->')
     if ts_response.status_code != 200:
         print('<p>HTTP error response %d'
               '- does configured user have admin rights?</p>' %
@@ -1176,14 +1176,14 @@ def page_recordings():
                 print(TD_EMPTY_CELL)
 
             if 'start' in entry:
-                print('<td>%s</td>' % (epoch_to_human_date(entry['start']), ))
+                print('<td>{ epoch_to_human_date(entry["start"]) }</td>')
             else:
                 print(TD_EMPTY_CELL)
 
             if 'summary' in entry and 'eng' in entry['title']:
-                print('<td>%s</td>' % (entry['summary']['eng'], ))
+                print(f'<td>{ entry["summary"]["eng"] }</td>')
             elif 'subtitle' in entry and 'eng' in entry['title']:
-                print('<td>%s</td>' % (entry['subtitle']['eng'], ))
+                print(f'<td>{ entry["subtitle"]["eng"] }</td>')
             else:
                 print(TD_EMPTY_CELL)
 
@@ -1206,10 +1206,7 @@ def page_serverinfo():
     ts_auth = MY_SETTINGS.get(SETTINGS_SECTION, TS_AUTH)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
-    ts_query = '%s/%s' % (
-        ts_url,
-        TS_URL_SVI,
-    )
+    ts_query = f'{ ts_url }/{ TS_URL_SVI, }'
     print('<!-- serverinfo URL %s -->' % (ts_query, ))
     if ts_auth == 'plain':
         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
@@ -1281,7 +1278,7 @@ def page_settings():
         print('      <td width="50%%"><input type="%s" name="c_%s" '
               'value="%s" style="display:table-cell; width:100%%"></td>' \
               % (SETTINGS_DEFAULTS[setting][TYPE], setting, setting_value, ))
-        print('      <td>&nbsp;%s</td>' % (SETTINGS_DEFAULTS[setting][DFLT], ))
+        print(f'      <td>&nbsp;{ SETTINGS_DEFAULTS[setting][DFLT] }</td>')
         print('    </tr>')
 
     print('''    <tr>
@@ -1310,17 +1307,14 @@ def page_status():
 
     global MY_SETTINGS
 
-    print('<h1>Server Status</h1>')
-
-    print('<h2>Input Status</h2>')
+    print('''<h1>Server Status</h1>
+<h2>Input Status</h2>''')
     ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
     ts_auth = MY_SETTINGS.get(SETTINGS_SECTION, TS_AUTH)
     ts_user = MY_SETTINGS.get(SETTINGS_SECTION, TS_USER)
     ts_pass = MY_SETTINGS.get(SETTINGS_SECTION, TS_PASS)
-    ts_query = '%s/%s' % (
-        ts_url,
-        TS_URL_STI,
-    )
+    ts_query = f'{ ts_url }/{ TS_URL_STI }'
+
     if ts_auth == 'plain':
         ts_response = requests.get(ts_query, auth=(ts_user, ts_pass))
     else:
