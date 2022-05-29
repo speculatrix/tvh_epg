@@ -524,12 +524,14 @@ def page_channel_table():
     channel_tag = get_channeltag_grid()
 
     cdl = len(channel_dict)
-    print('''<p><b>Channel count: %d</b></p>
-<p>Maximum number of channels viewable %s</p>
-<p>Note, the channel name links are the streams, open in VLC
-- you can drag and drop the link into a VLC window</p>''' \
-% (cdl, MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS)
-  ))
+    print(f'''<p><b>Channel count: { cdl }</b></p>
+<p>Maximum number of channels viewable in settings is { MY_SETTINGS.get(SETTINGS_SECTION, MAX_CHANS) }
+<br><br>
+Note, the channel links are the streams; to play, save the m3u and open in a
+player like VLC, you can also you can drag and drop the link into a VLC window.
+<br><br>
+The &mapstoup; character means you can hover the mouse and see the secondary title of the programme.
+</p>''')
 
     # channel labels
     if cdl:
