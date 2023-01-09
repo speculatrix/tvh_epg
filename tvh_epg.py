@@ -1227,7 +1227,7 @@ def page_settings():
 
     # the check load config function doesn't populate an empty file
     if SETTINGS_SECTION not in MY_SETTINGS.sections():
-        print(f'section { SETTINGS_SECTION } doesn\'t exit')
+        print(f'<p><font color="red">Warning, a settings file could not be loaded</font>, the settings section { SETTINGS_SECTION } was not found, please edit and save the config.</p>')
         MY_SETTINGS.add_section(SETTINGS_SECTION)
 
     # attempt to find the value of each setting, either from the params
@@ -1387,12 +1387,14 @@ def html_page_header():
     global MY_SETTINGS
 
     bg_col_page = BG_COL_DEF_PAGE
-    if BG_COL_PAGE in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_PAGE) != '':
-        bg_col_page = MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_PAGE)
-
     bg_col_input = BG_COL_DEF_INPUT
-    if BG_COL_INPUT in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_INPUT) != '':
-        bg_col_input = MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_INPUT)
+
+    if MY_SETTINGS and SETTINGS_SECTION in MY_SETTINGS: 
+        if BG_COL_PAGE in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_PAGE) != '':
+            bg_col_page = MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_PAGE)
+
+        if BG_COL_INPUT in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_INPUT) != '':
+            bg_col_input = MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_INPUT)
 
     # finalise tcp header
     #print('Content-Type: text/plain\n')                # plain text for extreme debugging
@@ -1602,14 +1604,13 @@ def web_interface():
     #illegal_param_count = 0
     error_text = 'Unknown error'
     (config_bad, error_text) = check_load_config_file()
-    if config_bad < 0:
-        p_page = 'error'
+    if not os.path.exists(CONFIG_FILE_NAME) or config_bad < 0:
+        p_page = 'settings'
     #elif config_bad > 0:
     #    p_page = 'settings'
     elif 'page' in CGI_PARAMS:
         p_page = CGI_PARAMS.getvalue('page')
     else:   # set the default page if none provided
-        #p_page = 'error'
         p_page = EPG
 
 
