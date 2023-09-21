@@ -75,8 +75,6 @@ TS_URL_DVF = 'dvrfile/'
 
 CGI_PARAMS = cgi.FieldStorage()
 
-EPG = 'epg'
-
 SECS_P_PIXEL = 10   # how many seconds per pixel
 
 #MAX_FUTURE = 28800   # 8 hours - how far into the future to show a prog
@@ -932,11 +930,8 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                                 # gap until next program
                                 box_width = (time_until - current_left_time) / SECS_P_PIXEL
                                 current_left_time = time_until
-                                print('        <div class="epg_none" style="width: '
-                                      '%dpx; max-width: %dpx">GAP</div>' % (
-                                          box_width,
-                                          box_width,
-                                      ), )
+                                print(f'        <div class="epg_none" style="width: '
+                                      f'{ box_width }px; max-width: { box_width }px">GAP</div>')
 
                             # print the boxes containing each program
                             if time_used > 0: # playing item
@@ -1324,9 +1319,8 @@ def page_status():
         print('<pre>%s</pre>' % json.dumps(
             ts_json, sort_keys=True, indent=4, separators=(',', ': ')))
     else:
-        print('<p>HTTP error response %d'
-              '- does configured user have admin rights?</p>' %
-              (ts_response.status_code, ))
+        print(f'<p>HTTP error response { ts_response.status_code }'
+              '- does configured user have admin rights?</p>')
 
     print('<h2>Connection Status</h2>')
     ts_query = '%s/%s' % (
@@ -1389,7 +1383,7 @@ def html_page_header():
     bg_col_page = BG_COL_DEF_PAGE
     bg_col_input = BG_COL_DEF_INPUT
 
-    if MY_SETTINGS and SETTINGS_SECTION in MY_SETTINGS: 
+    if MY_SETTINGS and SETTINGS_SECTION in MY_SETTINGS:
         if BG_COL_PAGE in MY_SETTINGS[SETTINGS_SECTION] and MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_PAGE) != '':
             bg_col_page = MY_SETTINGS.get(SETTINGS_SECTION, BG_COL_PAGE)
 
@@ -1611,17 +1605,16 @@ def web_interface():
     elif 'page' in CGI_PARAMS:
         p_page = CGI_PARAMS.getvalue('page')
     else:   # set the default page if none provided
-        p_page = EPG
+        p_page = 'channel_table'
 
 
-    if p_page == EPG:
-        html_page_header()
-        page_list_chans_epg(True)
-        html_page_footer()
-
-    elif p_page == 'error':
+    if p_page == 'error':
         html_page_header()
         page_error(error_text)
+        html_page_footer()
+    elif p_page == 'epg':
+        html_page_header()
+        page_list_chans_epg(True)
         html_page_footer()
     elif p_page == 'channel_list':
         html_page_header()
