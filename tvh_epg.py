@@ -551,11 +551,11 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
 
         # index required to make table rows
         print('''  <table>
-    <tr>''')
+    <tr width="100%">''')
         for _column_num in range(0, int(MY_SETTINGS.get(SETTINGS_SECTION, CHAN_COLUMNS))):
             if int(MY_SETTINGS.get(SETTINGS_SECTION, SH_LOGO)) != 0:
                 print('        <th>Channel Logo</th>')
-            print('''        <th>Channel Name</th>
+            print('''        <th>Number:&nbsp;Name</th>
         <td>&nbsp;</td>''')
         print('      </tr>')
         #ts_url = MY_SETTINGS.get(SETTINGS_SECTION, TS_URL)
@@ -594,7 +594,7 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                             if not os.path.exists(icon_file_name):
                                 skip_icon = True
 
-                        print('        <td width="100px" align="right" class="chan_icon">', end='')
+                        print('        <td align="right" class="chan_icon">', end='')
                         if skip_icon:
                             print('&nbsp;', end='')
                         else:
@@ -609,15 +609,24 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                     else:
                         print('        <td>&nbsp;</td>')
 
-                play_url = f'?page=m3u&amp;uuid=/{ TS_URL_STR }/{chan["uuid"] }'
-                print(f'        <td width="100px" align="right"><a title="watch live" href="{ play_url }" '
-                      f'download="tvheadend.m3u">{ input_form_escape(chan_name) }</a>&nbsp;&nbsp;&nbsp;({ chan["number"] })' )
+                play_url = f'?page=m3u&amp;uuid={ TS_URL_STR }/{chan["uuid"] }'
+                direct_url = uuid_to_url(f'{ TS_URL_STR }/{chan["uuid"]}')
+                print(f'        <td align="left">'
+                        f'{ chan["number"] }:&nbsp;&nbsp;{ input_form_escape(chan_name) }'
+                     )
                 if CAST_SUPPORT:
-                    print('        <br>\n        <a title="chromecast this" href="?page=chromecast&amp;'
+                    print('&nbsp;&nbsp;<a title="chromecast this" href="?page=chromecast&amp;'
                           f'uri=/{ TS_URL_STR }/{ chan["uuid"] }">'
                           f'<img src="{ MY_SETTINGS.get(SETTINGS_SECTION, TS_URL_CAST) }" alt="chromecast icon"></a>'
                           , end=''
                          )
+
+                print(f'<br />\n<a title="watch live m3u" href="{ play_url }" '
+                      f'download="tvheadend.m3u">m3u</a>'
+
+                      f'&nbsp;&nbsp;<a title="watch live raw" href="{ direct_url }">'
+                      f'raw</a>'
+                      )
                 print('</td>\n')
 
                 chan_idx += 1
@@ -858,7 +867,7 @@ The &mapstoup; character means you can hover the mouse and see the secondary tit
                     else:
                         print('<td>&nbsp;</td>')
 
-                play_url = f'?page=m3u&amp;uuid=/{ TS_URL_STR }/{ chan["uuid"] }'
+                play_url = f'?page=m3u&amp;uuid={ TS_URL_STR }/{ chan["uuid"] }'
                 print(f'      <td width="100px" align="right"><a title="watch live" href="{ play_url }" '
                       f'download="tvheadend.m3u">{ input_form_escape(chan_name) }</a>&nbsp;&nbsp;&nbsp;({ chan["number"] })' )
                 if CAST_SUPPORT:
@@ -1002,8 +1011,8 @@ def page_error(error_text):
 
 
 ##########################################################################################
-def page_m3u(p_uuid):
-    '''generates an m3u file to be played in e.g. vlc'''
+def uuid_to_url(p_uuid):
+    '''generates an uuid given the channel uuid'''
 
     global MY_SETTINGS
 
@@ -1039,7 +1048,7 @@ def page_m3u(p_uuid):
                      )
     else:
         # live streams use persistent auth
-        full_url = '%s://%s:%s%s%s%s' \
+        full_url = '%s://%s:%s/%s%s%s' \
                % (ts_url_parsed.scheme,
                   ts_url_parsed.hostname,
                   ts_url_parsed.port,
@@ -1048,8 +1057,15 @@ def page_m3u(p_uuid):
                   ts_pauth,
                  )
 
+    return full_url
+
+
+##########################################################################################
+def page_m3u(p_uuid):
+    '''generates an m3u file to be played in e.g. vlc'''
+
     print('#EXTM3U')
-    print(full_url)
+    print(uuid_to_url(p_uuid))
 
 
 ##########################################################################################
